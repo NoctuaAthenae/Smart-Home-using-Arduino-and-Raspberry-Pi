@@ -1,6 +1,6 @@
 # Smart Home using Arduino and Raspberry-Pi
 
-This project aims to provide scripts for a wireless (2.4 Ghz using NRF24L01 modules) network with star topology of Arduinos fullfilling different roles in a Smart Home, while a Raspberry Pi acts as the central hub and a server for a web interface.
+This project aims to provide scripts for a wireless (2.4 Ghz using NRF24L01 modules) network with tree topology of Arduinos fullfilling different roles in a Smart Home, while a Raspberry Pi acts as the central hub and a server for a web interface.
 
 # Roadmap
 
