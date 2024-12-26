@@ -9,12 +9,15 @@ The hub and each endpoint has it's each unique identifier, where the hub has the
 ## Messages
 
 Each message consists of the following fields:
+- 1 Byte: Version
 - 1 Byte: Receiver
 - 1 Byte: Sender
+- 1 Byte: Last Device, that handled the message
 - 1 Byte: Message Type
 - Variable: Message Type specific fields
+- 4 Byte: Timestamp
 - 1 Byte: Checksum
-- Total of 4 Bytes for the standard meta data
+- Total of 10 Bytes for the standard meta data
 
 ### Commands (0)
 
@@ -25,16 +28,13 @@ Additional fields:
 - 1 Byte: Total packages
 - 1 Byte: Command (only for first package)
 - Variabel: Parameters
-- 4 Byte: Timestamp
 
-The total size of meta data for a command package is 10 Bytes, which leaves 22 Bytes per Package as the maximum for a nRF24L01 is 32 Bytes. Since there is 1 Byte for package numbers, there can be a maximum of 256 packages, 
-which means the parameters can have 5 632 - 1 (Command) = 5 631 bytes at max.
+The total size of meta data for a command package is 12 Bytes, which leaves 20 Bytes per Package as the maximum for a nRF24L01 is 32 Bytes. Since there is 1 Byte for package numbers, there can be a maximum of 256 packages, 
+which means the parameters can have 5 344 - 1 (Command) = 5 343 bytes at max.
 
 ### Acknowledge (1)
 
-Confirms the sender, that the message has been received by the receiver by responding with the timestamp.\
-Additional fields:
-- 4 Byte: Timestamp of the incoming message
+Confirms the hop, that the message has reached the next hop by responding with the timestamp. This is done hop by hop. The timestamp field here is the timestamp of the incoming message.
 
 ### Register (2)
 
@@ -46,17 +46,20 @@ Accepts or rejects the endpoint, that is trying to register.
 
 ### Ping (5)
 
-Pings a device. The pinged device returns an Acknowledge message.\
-Additional fields:
-- 4 Byte: Timestamp
+Pings a device.
 
-### Route Creation (6)
+### Ping Response (6)
+
+Response to a ping.
+
+### Route Creation (7)
 
 Collects all hops to the hub for the new endpoint and writes the new endpoint into the routing list of each hop.\
 Additional fields:
+- 1 Byte: ID of the new endpoint
 - Variabel: Each Hop to the hub
 
-### Add To/Remove From Group (7/8)
+### Add To/Remove From Group (8/9)
 
 Adds or removes an endpoint to/from a group for broadcasting to a group of specific devices.\
 Additional fields:
@@ -66,12 +69,11 @@ Additional fields:
 
 ## Registration
 
-If the endpoint has been registered already, it sends it's ID to the hub or another endpoint, which will be the new endpoint's parent. The parent pings the ID to check if the endpoint tries to hijack an ID.
-If the ping does not get a response, the registration is accepted and an accept message is sent. Also a route creation message is sent to the parent's parent up to the hub.
-If the endpoint is registered the first time, it sends a 0 as ID. The hub then assigns the next free ID in an accept message
-if there are no more than 255 endpoints registered yet. The message is repeated if there is no accept or reject message after a timeout.
+If the endpoint has been registered already, it sends it's ID to the hub or another endpoint, which will be the new endpoint's parent. The parent sends a Route Creation message to the hub. Each hop on the way adds the new endpoint to it's routing list with all previous hops flagged invalid and adds itself to the hop list of the route creation message. The hub pings the ID of the new endpoint to check if the endpoint tries to hijack an ID.
+If the ping does not get a response, the registration is accepted and an accept message is sent. Each hop on the way validates the entry in the routing list.\
+If the endpoint is registered the first time, it sends a 0 as ID. The parent sends a Route Creation message to the hub. Each hop on the way adds the new endpoint to it's routing list with all previous hops flagged invalid and with the 0 as ID and adds itself to the hop list of the route creation message. The hub then assigns the next free ID in an accept message if there are is a free ID. Each hop on the way validates the entry and saves the correct ID in the routing list.
 
 ## Routing List
 
-Each Node has a list with all children and via what children they are reachable.\
+Each Node has a list with all children and via what children they are reachable. It can have invalid entries flagged valid if an endpoint disconnects, since there are no disconnect messages.\
 Example
