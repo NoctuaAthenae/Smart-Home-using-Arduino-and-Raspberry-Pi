@@ -11,13 +11,12 @@ The hub and each endpoint has it's each unique identifier, where the hub has the
 Each message consists of the following fields:
 - 1 Byte: Version
 - 1 Byte: Receiver
-- 1 Byte: Sender
 - 1 Byte: Last Device, that handled the message
 - 1 Byte: Message Type
 - Variable: Message Type specific fields
 - 4 Byte: Timestamp
 - 1 Byte: Checksum
-- Total of 10 Bytes for the standard meta data
+- Total of 9 Bytes for the standard meta data
 
 ### Commands (0)
 
@@ -29,8 +28,8 @@ Additional fields:
 - 1 Byte: Command (only for first package)
 - Variabel: Parameters
 
-The total size of meta data for a command package is 12 Bytes, which leaves 20 Bytes per Package as the maximum for a nRF24L01 is 32 Bytes. Since there is 1 Byte for package numbers, there can be a maximum of 256 packages, 
-which means the parameters can have 5 344 - 1 (Command) = 5 343 bytes at max.
+The total size of meta data for a command package is 11 Bytes, which leaves 20 Bytes per Package as the maximum for a nRF24L01 is 32 Bytes. Since there is 1 Byte for package numbers, there can be a maximum of 256 packages, 
+which means the parameters can have 5 376 - 1 (Command) = 5 377 bytes at max.
 
 ### Acknowledge (1)
 
@@ -46,11 +45,16 @@ Accepts or rejects the endpoint, that is trying to register.
 
 ### Ping (5)
 
-Pings a device.
+Pings a device.\
+Additional fields:
+- 1 Byte: Sender
+- 1 Byte: Ping ID
 
 ### Ping Response (6)
 
-Response to a ping.
+Response to a ping.\
+Additional fields:
+- 1 Byte: Ping ID
 
 ### Route Creation (7)
 
