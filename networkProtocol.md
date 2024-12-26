@@ -4,7 +4,7 @@ This Network Protocol is used for the communication between the central hub and 
 
 ## IDs
 
-The hub and each endpoint has it's each unique identifier, where the hub has the ID 1. The ID 0 is used for broadcast messages. It is stored in one byte, limiting the number of possible endpoints to 254.
+The hub and each endpoint has it's each unique identifier, where the hub has the ID 1. The ID 0 is used for broadcast messages. Also groups can be created and assigned an ID, broadcast to the group ID are received by every endpoint in the group. It is stored in one byte, limiting the number of possible endpoints/groups to 254.
 
 ## Messages
 
@@ -55,6 +55,12 @@ Additional fields:
 Collects all hops to the hub for the new endpoint and writes the new endpoint into the routing list of each hop.\
 Additional fields:
 - Variabel: Each Hop to the hub
+
+### Add To/Remove From Group (7/8)
+
+Adds or removes an endpoint to/from a group for broadcasting to a group of specific devices.\
+Additional fields:
+- 1 Byte: ID of the group
 
 ## Commands
 
