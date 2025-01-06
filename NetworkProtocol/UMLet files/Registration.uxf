@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="15.1">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLSequenceAllInOne</id>
+    <coordinates>
+      <x>360</x>
+      <y>100</y>
+      <w>730</w>
+      <h>410</h>
+    </coordinates>
+    <panel_attributes>title=Registration
+obj=New endpoint 4~a
+obj=Parent 2~b
+obj=Hub 1~c
+obj=Child 3~d
+
+on=a;
+a-&gt;&gt;&gt;b : Register(2, 4); on=b
+b-&gt;&gt;&gt;c : CreateRoute(1, 4, 2); on=c
+c-&gt;&gt;&gt;d : Ping(4)
+c-&gt;&gt;&gt;b : Accept() ; off=c
+b-&gt;&gt;&gt;a : Accept() ; off=b
+off=a</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
