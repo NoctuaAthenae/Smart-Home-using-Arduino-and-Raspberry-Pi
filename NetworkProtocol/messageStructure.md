@@ -36,17 +36,29 @@ Additional fields:
 The total size of meta data for a command package is 12 Bytes, which leaves 20 Bytes per Package as the maximum for a nRF24L01 is 32 Bytes. Since there is 1 Byte for package numbers, there can be a maximum of 256 packages, 
 which means the parameters can have 5 120 - 1 (Command) = 5 119 bytes at max.
 
+```
+void send(byte destination, byte command, byte[] payload)
+void sendToGroup(byte destination, byte command, byte[] payload)
+```
+
+
 ### Acknowledge (1)
 
-Confirms the hop, that the message has reached the next hop by responding with the timestamp. This is done hop by hop. The timestamp field here is the timestamp of the incoming message.
+Confirms the hop, that the message has reached the next hop by responding with the timestamp. This is done hop by hop. The timestamp field here is the timestamp of the incoming message.\
+Only sent by the protocol.
 
 ### Register (2)
 
 Registers an endpoint to the network at startup of the endpoint. See Registration for information.
 
+```
+void connect(byte parent)
+```
+
 ### Accept/Reject (3/4)
 
-Accepts or rejects the endpoint, that is trying to register.
+Accepts or rejects the endpoint, that is trying to register.\
+Only sent by the protocol.
 
 ### Ping (5)
 
@@ -55,11 +67,17 @@ Additional fields:
 - 1 Byte: Sender
 - 1 Byte: Ping ID
 
+```
+void ping(byte destination)
+```
+
 ### Ping Response (6)
 
 Response to a ping.\
 Additional fields:
 - 1 Byte: Ping ID
+
+Only sent by the protocol.
 
 ### Route Creation (7)
 
@@ -68,11 +86,15 @@ Additional fields:
 - 1 Byte: ID of the new endpoint
 - Variabel: Each Hop to the hub
 
+Only sent by the protocol.
+
 ### Add To/Remove From Group (8/9)
 
 Adds or removes an endpoint to/from a group for broadcasting to a group of specific devices.\
 Additional fields:
 - 1 Byte: ID of the group
+
+Can only be done at the interface of the hub, so the message is only sent by the protocol.
 
 ## Registration
 
