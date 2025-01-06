@@ -4,7 +4,7 @@ This Network Protocol is used for the communication between the central hub and 
 
 ## IDs
 
-The hub and each endpoint has it's each unique identifier, where the hub has the ID 1. The ID 0 is used for broadcast messages. Also groups can be created and assigned an ID, broadcast to the group ID are received by every endpoint in the group. It is stored in one byte, limiting the number of possible endpoints/groups to 254.
+The hub and each endpoint has it's each unique identifier, where the hub has the ID 1. The ID 0 is used for broadcast messages. Also groups can be created and assigned an ID, broadcast to the group ID are received by every endpoint in the group. It is stored in one byte, limiting the number of possible endpoints/groups to 254. Each member of the network only pays attention to message of it's parents or children and ignores all other messages, that are received from another member in range.
 
 ## Messages
 
@@ -12,11 +12,16 @@ Each message consists of the following fields:
 - 1 Byte: Version
 - 1 Byte: Receiver
 - 1 Byte: Last Device, that handled the message
-- 1 Byte: Message Type
+- 1 Byte: Next Hop
+- 6 Bit: Message Type (max 64 message types)
+<a name="GF"></a>
+- 1 Bit: Group flag (GF)
+<a name="GAF"></a>
+- 1 Bit: Group ascending flag (GAF)
 - Variable: Message Type specific fields
 - 4 Byte: Timestamp
 - 1 Byte: Checksum
-- Total of 9 Bytes for the standard meta data
+- Total of 10 Bytes for the standard meta data
 
 ### Commands (0)
 
@@ -28,8 +33,8 @@ Additional fields:
 - 1 Byte: Command (only for first package)
 - Variabel: Parameters
 
-The total size of meta data for a command package is 11 Bytes, which leaves 20 Bytes per Package as the maximum for a nRF24L01 is 32 Bytes. Since there is 1 Byte for package numbers, there can be a maximum of 256 packages, 
-which means the parameters can have 5 376 - 1 (Command) = 5 377 bytes at max.
+The total size of meta data for a command package is 12 Bytes, which leaves 20 Bytes per Package as the maximum for a nRF24L01 is 32 Bytes. Since there is 1 Byte for package numbers, there can be a maximum of 256 packages, 
+which means the parameters can have 5 120 - 1 (Command) = 5 119 bytes at max.
 
 ### Acknowledge (1)
 
@@ -81,3 +86,7 @@ If the endpoint is registered the first time, it sends a 0 as ID. The parent sen
 
 Each Node has a list with all children and via what children they are reachable. It can have invalid entries flagged valid if an endpoint disconnects, since there are no disconnect messages.\
 Example
+
+## Groups
+
+Endpoints can be parts of groups to benefit from group broadcasts. A group broadcast is sent with the [GF](#GF) and the [GAF](#GAF) flag set. While the GAF flag is set, all endpoints send the message to their parent. When the messages reaches the hub the GAF flag is reset and sent to all children. Each endpoint picks up the message and sends it to all own children, while the Next Hop field is set to the own ID.
