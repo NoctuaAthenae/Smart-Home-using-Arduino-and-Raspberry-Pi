@@ -1,10 +1,12 @@
-Here the internal send and receive methods are presented.
+# Send and Receive
 
-# Sending
+Here the internal send and receive methods are presented. These are the same for all message types. The distinction happens in the `processMessage()` method.
 
-Message sending works similar for most message Types. All messages are added to a send queue. If the message has not been acknowledged after a timeout, resend it.
+## Sending
 
-## Send
+All messages are added to a send queue. If the message has not been acknowledged after a timeout, resend it.
+
+### Send
 
 ```
 send(byte destination, byte messageTypeAndGroupFlags, byte[] payload)
@@ -31,14 +33,14 @@ send(byte destination, byte messageTypeAndGroupFlags, byte[] payload)
 ```
 Payload is set according to the message type.
 
-# Receiving
+## Receiving
 
 All received messages are added to a receive queue, so if a acknowledgement gets lost and an already processed message is resent, it is ignored, but acknowledged.
 
-## Receive
+### Receive
 
 ```
-receive(byte[] message)
+receive(Message message)
   if message.lastHop != parent and message.lastHop not in children:
     return
   if group flag set:
@@ -58,4 +60,36 @@ receive(byte[] message)
       processMessage(message)
     else:
       send(message)
+```
+
+# Message Types
+
+This section describes the internal processes for the different message types. Message types, that belong to the same feature are described together in the same subsection.
+
+## Register
+
+The registration registers the device at the parent, which creates the route from the hub to the new device.
+
+### Registration at new device
+
+The `register` method starts the registration at the parent with the given ID.
+
+```
+register(byte parent)
+  id = tryGetIdFromMemory()
+  if id == null:
+    id = 0
+  this.id = id
+  send(parent, getTypeByte(Register, NoGroup), [])
+```
+
+When a response is received, the registration is finished with the following method.
+
+```
+finishRegistration(Message message):
+  if message.isReject:
+    return
+  if this.id == 0:
+    this.id = message.givenId
+  this.registered = true
 ```
