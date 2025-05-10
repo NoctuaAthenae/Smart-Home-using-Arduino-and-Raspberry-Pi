@@ -80,6 +80,7 @@ register(byte parent)
   if id == null:
     id = 0
   this.id = id
+  this.parent = parent
   send(parent, getTypeByte(Register, NoGroup), [])
 ```
 
@@ -92,4 +93,62 @@ finishRegistration(Message message):
   if this.id == 0:
     this.id = message.givenId
   this.registered = true
+```
+
+### Registration at parent
+
+The parent initiates the route creation for the new device.
+
+```
+registrationMessage(Message message):
+  this.routingTable.create(message.lastHop, message.lastHop, invalid)
+  send(this.parent, getTypeByte(RouteCreation, NoGroup, [message.lastHop])
+```
+
+### Each hop on the way
+
+Each hop adds the new device to its routing table.
+
+```
+registrationUpwards(Message message):
+  this.routingTable.create(message.newDevice, message.lastHop, invalid)
+  send(this.parent, getTypeByte(RouteCreation, NoGroup), message.payload.append(this.id))
+
+registrationDownwards(Message message):
+  send(message.givenId, getTypeByte(AcceptReject, NoGroup), [message.isAccept, message.givenId])
+  if message.isReject:
+    this.routingTable.remove(message.givenId)
+    return
+  if this.routingTable.hasZero():
+    this.routingTable.replace(message.givenId)
+  this.routingTable.validate(message.givenId)
+```
+
+### Hub
+
+The hub checks if there is already a device with the requested ID if one is given. If not and there are still IDs available accept the request.
+
+```
+registrationRequest(Message message):
+  if message.newDevice == 0:
+    id = tryGetNewId()
+    if id != null:
+      message.newDevice = id
+      accept(message)
+    else:
+      reject(message)
+    return
+  send(message.newDevice, getTypeByte(Ping, NoGroup), [this.id, timestamp])
+  timer.timeout = accept(message)
+  timer.start()
+
+pingReceived(Message message):
+  timer.delete()
+  reject(message)
+
+accept(Message message):
+  this.routingTable.create(message.newDevice, message.lastHop, valid)
+  send(message.givenId, getTypeByte(AcceptReject, NoGroup), [true, message.givenId])
+reject(Message message):
+  send(message.givenId, getTypeByte(AcceptReject, NoGroup), [false, message.givenId])
 ```
