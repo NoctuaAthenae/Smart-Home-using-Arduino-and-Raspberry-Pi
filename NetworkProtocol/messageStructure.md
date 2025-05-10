@@ -55,12 +55,15 @@ Registers an endpoint to the network at startup of the endpoint. See Registratio
 void connect(byte parent)
 ```
 
-### Accept/Reject (3/4)
+### Accept/Reject (3)
 
 Accepts or rejects the endpoint, that is trying to register.\
+Additional fields:
+- 1 Byte: Accept (1)/Reject (0)
+- 1 Byte: Given ID
 Only sent by the protocol.
 
-### Ping (5)
+### Ping (4)
 
 Pings a device.\
 Additional fields:
@@ -71,7 +74,7 @@ Additional fields:
 void ping(byte destination)
 ```
 
-### Ping Response (6)
+### Ping Response (5)
 
 Response to a ping.\
 Additional fields:
@@ -79,7 +82,7 @@ Additional fields:
 
 Only sent by the protocol.
 
-### Route Creation (7)
+### Route Creation (6)
 
 Collects all hops to the hub for the new endpoint and writes the new endpoint into the routing list of each hop.\
 Additional fields:
@@ -88,10 +91,11 @@ Additional fields:
 
 Only sent by the protocol.
 
-### Add To/Remove From Group (8/9)
+### Add To/Remove From Group (7)
 
 Adds or removes an endpoint to/from a group for broadcasting to a group of specific devices.\
 Additional fields:
+- 1 Byte: Add (1)/Remove (0) 
 - 1 Byte: ID of the group
 
 Can only be done at the interface of the hub, so the message is only sent by the protocol.
