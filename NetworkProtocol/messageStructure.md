@@ -69,20 +69,15 @@ Pings a device.\
 Additional fields:
 - 1 Byte: Sender
 - 1 Byte: Ping ID
+- 1 Byte: Is Response
 
 ```
 void ping(byte destination)
 ```
 
-### Ping Response (5)
+Represents both ping request and response. The response is marked with the IsResponse field
 
-Response to a ping.\
-Additional fields:
-- 1 Byte: Ping ID
-
-Only sent by the protocol.
-
-### Route Creation (6)
+### Route Creation (5)
 
 Collects all hops to the hub for the new endpoint and writes the new endpoint into the routing list of each hop.\
 Additional fields:
@@ -91,7 +86,7 @@ Additional fields:
 
 Only sent by the protocol.
 
-### Add To/Remove From Group (7)
+### Add To/Remove From Group (6)
 
 Adds or removes an endpoint to/from a group for broadcasting to a group of specific devices.\
 Additional fields:
