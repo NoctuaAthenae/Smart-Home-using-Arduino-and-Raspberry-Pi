@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="15.1">
+  <zoom_level>15</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1815</x>
+      <y>405</y>
+      <w>390</w>
+      <h>510</h>
+    </coordinates>
+    <panel_attributes>Message
+--
+version: byte
+receiver: byte
+lastDevice: byte
+nextHop: byte
+typeAndGroups: byte
+timestamp: uint32
+checksum: byte
+--
+/getType(): byte/
+isGroup(): bool
+setGroup(bool)
+isGroupAsc(): bool
+setGroupAsc(bool)
+addChecksum()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1815</x>
+      <y>1080</y>
+      <w>390</w>
+      <h>165</h>
+    </coordinates>
+    <panel_attributes>RouteCreationMessage
+--
+newId: byte
+route: byte[]
+--
+getType(): byte</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1980</x>
+      <y>900</y>
+      <w>45</w>
+      <h>210</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;120.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2235</x>
+      <y>1080</y>
+      <w>390</w>
+      <h>195</h>
+    </coordinates>
+    <panel_attributes>PingMessage
+--
+pingId: byte
+senderId: byte
+response: bool
+--
+getType(): byte</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1980</x>
+      <y>900</y>
+      <w>465</w>
+      <h>210</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0;290.0;60.0;290.0;120.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1395</x>
+      <y>1080</y>
+      <w>390</w>
+      <h>165</h>
+    </coordinates>
+    <panel_attributes>AcceptRejectMessage
+--
+givenId: byte
+--
+getType(): byte
+isAccept(): bool</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1560</x>
+      <y>900</y>
+      <w>465</w>
+      <h>210</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>290.0;10.0;290.0;60.0;10.0;60.0;10.0;120.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>975</x>
+      <y>1080</y>
+      <w>390</w>
+      <h>105</h>
+    </coordinates>
+    <panel_attributes>RegisterMessage
+--
+--
+getType(): byte</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1155</x>
+      <y>900</y>
+      <w>870</w>
+      <h>210</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>560.0;10.0;560.0;60.0;10.0;60.0;10.0;120.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2655</x>
+      <y>1080</y>
+      <w>465</w>
+      <h>165</h>
+    </coordinates>
+    <panel_attributes>AddRemoveToGroupMessage
+--
+AddToGroup: bool
+groupId: byte
+--
+getType(): byte</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1980</x>
+      <y>900</y>
+      <w>930</w>
+      <h>210</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0;600.0;60.0;600.0;120.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>30</x>
+      <y>660</y>
+      <w>1005</w>
+      <h>195</h>
+    </coordinates>
+    <panel_attributes>SendingHandler
+--
+--
+SendlingHandler
+send(destination: byte, command: byte, payload: byte[])
+sendToGroup(destination: byte, command: byte, payload: byte[])
+acknowledged(timestamp: uint32)
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>30</x>
+      <y>300</y>
+      <w>1005</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>ReceivingHandler
+--
+--
+ReceivingHandler(receiveMethod, handleCommandMethod)
+update()
+inQueue(): bool
+
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>480</x>
+      <y>465</y>
+      <w>285</w>
+      <h>225</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+sendingHandler</panel_attributes>
+    <additional_attributes>10.0;130.0;10.0;10.0</additional_attributes>
+  </element>
+</diagram>
