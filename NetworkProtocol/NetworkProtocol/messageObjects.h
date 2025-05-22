@@ -58,24 +58,6 @@ public:
     }
 };
 
-class RouteCreationMessage : public Message {
-public:
-    explicit RouteCreationMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t newId, uint8_t route*, uint8_t numberHopsInRoute)
-        : Message(receiver, lastDeviceId, nextHop, typeAndGroups) {
-        this->newId = newId;
-        for (int i = 0; i < numberHopsInRoute; i++) {
-            this->route[i] = route[i];
-        }
-    }
-
-    uint8_t newId;
-    uint8_t route[21];
-
-    uint8_t getType() override {
-        return 5;
-    }
-};
-
 class PingMessage : public Message {
 public:
     explicit PingMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t pingId, uint8_t senderId, bool isResponse)
@@ -91,6 +73,24 @@ public:
 
     uint8_t getType() override {
         return 4;
+    }
+};
+
+class RouteCreationMessage : public Message {
+public:
+    explicit RouteCreationMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t newId, uint8_t route*, uint8_t numberHopsInRoute)
+        : Message(receiver, lastDeviceId, nextHop, typeAndGroups) {
+        this->newId = newId;
+        for (int i = 0; i < numberHopsInRoute; i++) {
+            this->route[i] = route[i];
+        }
+    }
+
+    uint8_t newId;
+    uint8_t route[21];
+
+    uint8_t getType() override {
+        return 5;
     }
 };
 
