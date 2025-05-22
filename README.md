@@ -4,7 +4,7 @@ This project aims to provide scripts for a wireless (2.4 Ghz using NRF24L01 modu
 
 # Roadmap
 
-- [ ] Define Network Protocol
+- [X] Define Network Protocol
 - [ ] Network Library
 - [ ] Web Admin GUI
 - [ ] Routing of the hub
