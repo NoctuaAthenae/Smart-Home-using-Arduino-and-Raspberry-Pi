@@ -1,6 +1,10 @@
 #ifndef NETWORKPROTOCOL_MESSAGEOBJECTS_H
 #define NETWORKPROTOCOL_MESSAGEOBJECTS_H
 #include <cstdint>
+#include <vector>
+#include <cstring>
+
+#define VERSION 0
 
 class Message {
 public:
@@ -21,9 +25,10 @@ public:
     bool isGroupAscending();
     void setGroupAscending(bool);
     void addChecksum();
+    virtual std::vector<uint8_t*> getRawPackages();
 
     Message(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups) {
-        this->version = 0;
+        this->version = VERSION;
         this->receiver = receiver;
         this->lastDeviceId = lastDeviceId;
         this->nextHop = nextHop;
@@ -71,6 +76,8 @@ class CommandMessage : public Message {
 
     // TODO variable size
     CommandMessageInternal commandMessageInternal[256];
+
+    std::vector<uint8_t*> getRawPackages() override;
 };
 
 class AcknowledgeMessage : public Message {
@@ -104,6 +111,7 @@ public:
     uint8_t getType() override {
         return 3;
     }
+    std::vector<uint8_t*> getRawPackages() override;
 };
 
 class PingMessage : public Message {
@@ -122,6 +130,7 @@ public:
     uint8_t getType() override {
         return 4;
     }
+    std::vector<uint8_t*> getRawPackages() override;
 };
 
 class RouteCreationMessage : public Message {
@@ -140,6 +149,7 @@ public:
     uint8_t getType() override {
         return 5;
     }
+    std::vector<uint8_t*> getRawPackages() override;
 };
 
 class AddRemoveToGroupMessage : public Message {
@@ -150,12 +160,13 @@ public:
         this->isAddToGroup = isAddToGroup;
     }
 
-    bool isAddToGroup;
     uint8_t groupId;
+    bool isAddToGroup;
 
     uint8_t getType() override {
         return 6;
     }
+    std::vector<uint8_t*> getRawPackages() override;
 };
 
 #endif //NETWORKPROTOCOL_MESSAGEOBJECTS_H
