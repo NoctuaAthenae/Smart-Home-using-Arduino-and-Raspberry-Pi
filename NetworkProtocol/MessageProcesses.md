@@ -62,6 +62,21 @@ receive(Message message)
       send(message)
 ```
 
+### Processing the message
+
+The message is handled dependend on the message type. Command can be split into different packages to transmit larger data, so it has to be put back together at the receiver.
+
+```
+processMessage(Message message)
+  byte messageType = message.getType()
+  switch messageType:
+    case command:
+      CommandMessage commandMessage;
+      if commandMessageBuilder.newCommandMessage(message, &commandMessage):
+        processCommand(commandMessage)
+    ...
+```
+
 # Message Types
 
 This section describes the internal processes for the different message types. Message types, that belong to the same feature are described together in the same subsection.
