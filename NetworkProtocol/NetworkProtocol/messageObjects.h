@@ -117,7 +117,7 @@ public:
     }
 
     uint8_t newId;
-    uint8_t route[21];
+    uint8_t route[21]{};
 
     uint8_t getType() override {
         return 5;

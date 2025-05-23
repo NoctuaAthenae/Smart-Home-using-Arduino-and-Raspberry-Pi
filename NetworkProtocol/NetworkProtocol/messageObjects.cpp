@@ -64,8 +64,12 @@ std::vector<uint8_t*> PingMessage::getRawPackages() {
 std::vector<uint8_t*> RouteCreationMessage::getRawPackages() {
     std::vector<uint8_t*> rawPackages = Message::getRawPackages();
     rawPackages.at(0)[10] = this->newId;
-    for (int i = 0; i < 21; ++i)
+    int i = 0;
+    while (i < 21 && this->route[i] != 0) {
         rawPackages.at(0)[11 + i] = this->route[i];
+        ++i;
+    }
+    rawPackages.at(0)[11 + i] = this->lastDeviceId;
     return rawPackages;
 }
 
