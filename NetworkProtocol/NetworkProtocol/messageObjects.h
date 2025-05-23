@@ -1,6 +1,7 @@
 #ifndef NETWORKPROTOCOL_MESSAGEOBJECTS_H
 #define NETWORKPROTOCOL_MESSAGEOBJECTS_H
 #include <cstdint>
+#include <utility>
 #include <vector>
 #include <cstring>
 
@@ -38,44 +39,16 @@ public:
     }
 };
 
-class CommandMessageInternal : public Message {
-public:
-    explicit CommandMessageInternal(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t command, uint8_t content*, uint8_t numberBytesContent, uint8_t packageNumber, uint8_t totalPackages)
+class CommandMessage : public Message {
+    explicit CommandMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t command, std::vector<uint8_t> content)
         : Message(receiver, lastDeviceId, nextHop, typeAndGroups) {
-        this->packageNumber = packageNumber;
-        this->totalPackages = totalPackages;
+
         this->command = command;
-        for (int i = 0; i < numberBytesContent; i++) {
-            this->content[i] = content[i];
-        }
+        this->content = std::move(content);
     }
 
     uint8_t command;
-    uint8_t packageNumber;
-    uint8_t totalPackages;
-    uint8_t content[21];
-};
-
-class CommandMessage : public Message {
-    explicit CommandMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t command, uint8_t content*, uint8_t numberBytesContent)
-        : Message(receiver, lastDeviceId, nextHop, typeAndGroups) {
-
-
-        uint8_t totalPackages = numberBytesContent / 20 + 1;
-
-        for (int i = 0; i < totalPackages; i++) {
-
-            // TODO fix number bytes for current package
-            uint8_t numberBytesContentPackage = i == totalPackages ? numberBytesContent - 20 * (totalPackages - 1) : i == 0 ? 19 : 20;
-            uint8_t content[numberBytesContentPackage];
-
-            // TODO copy content
-            this->commandMessageInternal[i] = CommandMessageInternal(receiver, lastDeviceId, nextHop, typeAndGroups, command, content, numberBytesContentPackage, i, totalPackages);
-        }
-    }
-
-    // TODO variable size
-    CommandMessageInternal commandMessageInternal[256];
+    std::vector<uint8_t> content;
 
     std::vector<uint8_t*> getRawPackages() override;
 };
