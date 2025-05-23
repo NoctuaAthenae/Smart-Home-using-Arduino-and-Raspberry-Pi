@@ -27,6 +27,7 @@ public:
     void setGroupAscending(bool);
     void addChecksum();
     virtual std::vector<uint8_t*> getRawPackages();
+    static void cleanUp(const std::vector<uint8_t*>*);
 
     Message(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups) {
         this->version = VERSION;

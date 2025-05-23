@@ -1,4 +1,6 @@
 #include "messageObjects.h"
+
+#include <cstdlib>
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define SET_BIT(var,pos,set) ((var) | (set<<(pos)))
 
@@ -23,13 +25,12 @@ void Message::addChecksum() {
 }
 
 std::vector<uint8_t*> Message::getRawPackages() {
-    uint8_t rawPackage[32] = {
+    auto *rawPackage = new uint8_t[32] {
         this->version,
         this->receiver,
         this->lastDeviceId,
         this->nextHop,
         this->typeAndGroups,
-        this->checksum,
     };
 
     std::memcpy(rawPackage + 6, &(this->timestamp), 4);
@@ -37,11 +38,39 @@ std::vector<uint8_t*> Message::getRawPackages() {
     return {rawPackage};
 }
 
+void Message::cleanUp(const std::vector<uint8_t *>* packages) {
+    for (auto & package : *packages) {
+        delete[] package;
+    }
+}
+
+
 std::vector<uint8_t*> CommandMessage::getRawPackages() {
     std::vector<uint8_t*> rawPackages = Message::getRawPackages();
+
+    uint8_t numberPackages = this->content.size() / 20 + 1;
+
+    rawPackages.at(0)[11] = numberPackages;
     uint8_t* templatePackage = rawPackages[0];
 
-    // TODO create package array
+    uint8_t lastPackageSize = this->content.size() -
+        (numberPackages == 1 ? 0 : (19 + (numberPackages - 1) * 20));
+
+    for (uint8_t i = 0; i < numberPackages; i++) {
+        if (i == 0) {
+            rawPackages.at(0)[10] = 0;
+            rawPackages.at(0)[12] = this->command;
+            continue;
+        }
+
+        auto *package = new uint8_t[32];
+        memcpy(package, templatePackage, 32);
+        package[10] = i;
+
+        memcpy(package + 12, &this->content[19 + 20 * (i - 1)], i == numberPackages - 1 ? lastPackageSize : 20);
+
+        rawPackages.push_back(package);
+    }
 
     return rawPackages;
 }
