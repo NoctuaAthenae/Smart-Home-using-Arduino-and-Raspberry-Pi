@@ -158,6 +158,13 @@ class CommandMessage : public Message {
      * @return Vector with all messages.
      */
     std::vector<uint8_t*> getRawPackages() override;
+
+    /**
+     * @return Type of this message.
+     */
+    uint8_t getType() override {
+        return 0;
+    }
 };
 
 /**
@@ -175,6 +182,13 @@ public:
     explicit AcknowledgeMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t typeAndGroups, uint8_t timestamp)
         : Message(receiver, lastDeviceId, receiver, typeAndGroups) {
         this->timestamp = timestamp;
+    }
+
+    /**
+     * @return Type of this message.
+     */
+    uint8_t getType() override {
+        return 1;
     }
 };
 
