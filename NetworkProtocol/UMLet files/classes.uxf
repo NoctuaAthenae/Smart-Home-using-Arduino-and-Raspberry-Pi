@@ -4,8 +4,8 @@
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1456</x>
-      <y>210</y>
+      <x>1442</x>
+      <y>140</y>
       <w>336</w>
       <h>364</h>
     </coordinates>
@@ -31,8 +31,8 @@ getRawPackages(): List&lt;byte[]&gt;</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1498</x>
-      <y>728</y>
+      <x>1484</x>
+      <y>658</y>
       <w>252</w>
       <h>112</h>
     </coordinates>
@@ -47,8 +47,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1610</x>
-      <y>560</y>
+      <x>1596</x>
+      <y>490</y>
       <w>42</w>
       <h>196</h>
     </coordinates>
@@ -58,8 +58,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1778</x>
-      <y>728</y>
+      <x>1764</x>
+      <y>658</y>
       <w>168</w>
       <h>140</h>
     </coordinates>
@@ -75,8 +75,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1610</x>
-      <y>560</y>
+      <x>1596</x>
+      <y>490</y>
       <w>280</w>
       <h>196</h>
     </coordinates>
@@ -86,8 +86,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1246</x>
-      <y>728</y>
+      <x>1232</x>
+      <y>658</y>
       <w>224</w>
       <h>112</h>
     </coordinates>
@@ -102,8 +102,8 @@ isAccept(): bool</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1344</x>
-      <y>560</y>
+      <x>1330</x>
+      <y>490</y>
       <w>308</w>
       <h>196</h>
     </coordinates>
@@ -113,8 +113,8 @@ isAccept(): bool</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1022</x>
-      <y>728</y>
+      <x>1008</x>
+      <y>658</y>
       <w>196</w>
       <h>70</h>
     </coordinates>
@@ -127,8 +127,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1106</x>
-      <y>560</y>
+      <x>1092</x>
+      <y>490</y>
       <w>546</w>
       <h>196</h>
     </coordinates>
@@ -138,8 +138,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1974</x>
-      <y>728</y>
+      <x>1960</x>
+      <y>658</y>
       <w>322</w>
       <h>112</h>
     </coordinates>
@@ -154,8 +154,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1610</x>
-      <y>560</y>
+      <x>1596</x>
+      <y>490</y>
       <w>560</w>
       <h>196</h>
     </coordinates>
@@ -165,8 +165,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>742</x>
-      <y>448</y>
+      <x>728</x>
+      <y>378</y>
       <w>672</w>
       <h>140</h>
     </coordinates>
@@ -184,8 +184,8 @@ acknowledged(timestamp: uint32)
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>756</x>
-      <y>154</y>
+      <x>742</x>
+      <y>84</y>
       <w>630</w>
       <h>126</h>
     </coordinates>
@@ -203,8 +203,8 @@ inQueue(): bool
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1050</x>
-      <y>266</y>
+      <x>1036</x>
+      <y>196</y>
       <w>196</w>
       <h>210</h>
     </coordinates>
@@ -215,8 +215,8 @@ sendingHandler</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>728</x>
-      <y>728</y>
+      <x>714</x>
+      <y>658</y>
       <w>266</w>
       <h>70</h>
     </coordinates>
@@ -229,8 +229,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>854</x>
-      <y>560</y>
+      <x>840</x>
+      <y>490</y>
       <w>798</w>
       <h>196</h>
     </coordinates>
@@ -240,8 +240,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2324</x>
-      <y>728</y>
+      <x>2310</x>
+      <y>658</y>
       <w>238</w>
       <h>140</h>
     </coordinates>
@@ -257,8 +257,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1610</x>
-      <y>560</y>
+      <x>1596</x>
+      <y>490</y>
       <w>854</w>
       <h>196</h>
     </coordinates>
@@ -268,8 +268,8 @@ getType(): byte</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>14</x>
-      <y>182</y>
+      <x>0</x>
+      <y>112</y>
       <w>602</w>
       <h>84</h>
     </coordinates>
@@ -282,8 +282,8 @@ newCommandMessage(Message, CommandMessage*): bool</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>602</x>
-      <y>196</y>
+      <x>588</x>
+      <y>126</y>
       <w>182</w>
       <h>56</h>
     </coordinates>
