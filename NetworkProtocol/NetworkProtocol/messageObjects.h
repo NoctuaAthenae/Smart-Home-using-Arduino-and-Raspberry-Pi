@@ -84,9 +84,9 @@ public:
     void setGroupAscending(bool set);
 
     /**
-     * Adds a checksum to the message.
+     * Checks if the checksum is correct.
      */
-    void addChecksum();
+    static bool checkChecksum(uint8_t* rawPackage);
 
     /**
      * Converts the messages to arrays of 32 bytes.
@@ -119,6 +119,17 @@ public:
         this->timestamp = 0;
         this->checksum = 0;
     }
+
+private:
+    /**
+     * Adds a checksum to the message.
+     */
+    static void addChecksum(uint8_t* rawPackage);
+
+    /**
+     * Calculates the checksum of the given raw Package.
+     */
+    static uint8_t getChecksum(uint8_t* rawPackage);
 };
 
 
