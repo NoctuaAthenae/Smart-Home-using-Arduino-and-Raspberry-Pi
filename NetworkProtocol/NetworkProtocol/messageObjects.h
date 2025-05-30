@@ -88,6 +88,8 @@ public:
      */
     static bool checkChecksum(uint8_t* rawPackage);
 
+    static Message *fromRawBytes(const uint8_t* rawPackage);
+
     /**
      * Converts the messages to arrays of 32 bytes.
      * For messages larger than 32 bytes, the message is split and each message is added to the returned vector.
@@ -190,7 +192,7 @@ public:
      * @param typeAndGroups Message type and group flags.
      * @param timestamp Timestamp of the original message.
      */
-    explicit AcknowledgeMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t typeAndGroups, uint8_t timestamp)
+    explicit AcknowledgeMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t typeAndGroups, uint32_t timestamp)
         : Message(receiver, lastDeviceId, receiver, typeAndGroups) {
         this->timestamp = timestamp;
     }

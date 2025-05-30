@@ -46,6 +46,29 @@ uint8_t Message::getChecksum(uint8_t *rawPackage) {
     return crc;
 }
 
+Message *Message::fromRawBytes(const uint8_t *rawPackage) {
+    uint8_t type = rawPackage[4] >> 2;
+
+    switch (type) {
+        case 0:
+            break;
+        case 1:
+            return new AcknowledgeMessage(rawPackage[1], rawPackage[2], rawPackage[4], rawPackage[6]);
+        case 2:
+            return new RegisterMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4]);
+        case 3:
+            return new AcceptRejectMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage[11]);
+        case 4:
+            return new PingMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage[11], rawPackage[12]);
+        case 5:
+            uint8_t numberHopsInRoute = 0;
+            while (rawPackage[11 + numberHopsInRoute] != 0) numberHopsInRoute++;
+            return new RouteCreationMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage + 11, numberHopsInRoute);
+        case 6:
+            return new AddRemoveToGroupMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage[11]);
+    }
+}
+
 
 
 std::vector<uint8_t*> Message::getRawPackages() {
