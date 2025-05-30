@@ -122,7 +122,7 @@ public:
         this->checksum = 0;
     }
 
-private:
+protected:
     /**
      * Adds a checksum to the message.
      */
