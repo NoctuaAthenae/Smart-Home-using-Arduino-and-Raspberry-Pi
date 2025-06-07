@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(AcceptRejectRawPackageTest) {
 }
 
 
-BOOST_AUTO_TEST_CASE(PintRawPackageTest) {
+BOOST_AUTO_TEST_CASE(PingRawPackageTest) {
     uint8_t id = std::rand() % 256;
     uint8_t lastDevive = std::rand() % 256;
     uint32_t timestamp = std::rand();
@@ -171,6 +171,51 @@ BOOST_AUTO_TEST_CASE(PintRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->pingId, pingId);
     BOOST_CHECK_EQUAL(createdMsg->getType(), 4);
     BOOST_CHECK(createdMsg->isResponse);
+
+    package[2] = lastDevive + 1;
+    BOOST_CHECK(!Message::checkChecksum(package));
+
+}
+
+
+BOOST_AUTO_TEST_CASE(AddRemoveToGroupRawPackageTest) {
+    uint8_t id = std::rand() % 256;
+    uint8_t lastDevive = std::rand() % 256;
+    uint32_t timestamp = std::rand();
+    uint8_t nextHop = std::rand() % 256;
+    uint8_t groupId = std::rand() % 256;
+    AddRemoveToGroupMessage msg = AddRemoveToGroupMessage(id, lastDevive, nextHop, false, groupId, true);
+
+    msg.timestamp = timestamp;
+    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+
+    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+
+    uint8_t *package = rawPackages.at(0);
+
+    BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
+    BOOST_CHECK_EQUAL(package[1], id);
+    BOOST_CHECK_EQUAL(package[2], lastDevive);
+    BOOST_CHECK_EQUAL(package[3], nextHop);
+    BOOST_CHECK_EQUAL(package[4] / 4, 6);
+
+    uint32_t createdTimestamp = 0;
+    memcpy(&createdTimestamp, package + 6, sizeof(uint32_t));
+
+    BOOST_CHECK_EQUAL(createdTimestamp, timestamp);
+
+    BOOST_CHECK(Message::checkChecksum(package));
+
+
+    auto* createdMsg = (AddRemoveToGroupMessage*) Message::fromRawBytes(rawPackages.at(0));
+
+    BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
+    BOOST_CHECK_EQUAL(createdMsg->receiver, id);
+    BOOST_CHECK_EQUAL(createdMsg->lastDeviceId, lastDevive);
+    BOOST_CHECK_EQUAL(createdMsg->nextHop, nextHop);
+    BOOST_CHECK_EQUAL(createdMsg->groupId, groupId);
+    BOOST_CHECK_EQUAL(createdMsg->getType(), 6);
+    BOOST_CHECK(createdMsg->isAddToGroup);
 
     package[2] = lastDevive + 1;
     BOOST_CHECK(!Message::checkChecksum(package));
