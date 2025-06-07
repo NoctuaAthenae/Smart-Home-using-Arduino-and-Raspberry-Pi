@@ -1,14 +1,14 @@
 #define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE CreateRawPackageTest
+#define BOOST_TEST_MODULE RawPackageTest
 
 #include <boost/test/unit_test.hpp>
 
 #include "../messageObjects.h"
 
 
-BOOST_AUTO_TEST_SUITE(CreateRawPackage)
+BOOST_AUTO_TEST_SUITE(RawPackage)
 
-BOOST_AUTO_TEST_CASE(createAck) {
+BOOST_AUTO_TEST_CASE(AckRawPackageTest) {
     uint8_t id = std::rand() % 256;
     uint8_t lastDevive = std::rand() % 256;
     uint8_t messageType = std::rand() % 64;
