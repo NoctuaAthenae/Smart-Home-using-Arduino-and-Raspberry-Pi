@@ -33,7 +33,8 @@ void Message::addChecksum(uint8_t* rawPackage) {
 
 uint8_t Message::getChecksum(uint8_t *rawPackage) {
     uint8_t crc = 255;
-    for (auto byte: rawPackage) {
+    for (uint8_t index = 0; index < 32; ++index) {
+        uint8_t byte = rawPackage[index];
         for (uint8_t i = 0; i < 8; i++) {
             if (crc & 128) {
                 crc = (crc * 2 + (byte & 128 ? 1 : 0) ) ^ CRC_POLY;
@@ -50,24 +51,39 @@ Message *Message::fromRawBytes(const uint8_t *rawPackage) {
     uint8_t type = rawPackage[4] >> 2;
 
     switch (type) {
-        case 0:
-            return new PartialCommandMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage + 11, rawPackage + 6);
-        case 1:
-            return new AcknowledgeMessage(rawPackage[1], rawPackage[2], rawPackage[4], rawPackage[6]);
-        case 2:
-            return new RegisterMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4]);
-        case 3:
-            return new AcceptRejectMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage[11]);
-        case 4:
-            return new PingMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage[11], rawPackage[12]);
-        case 5:
+        case 0: {
+            return new PartialCommandMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4],
+                rawPackage[10], rawPackage + 11, rawPackage + 6);
+        }
+        case 1: {
+            return new AcknowledgeMessage(rawPackage[1], rawPackage[2], rawPackage[4],
+                rawPackage[6]);
+        }
+        case 2: {
+            return new RegisterMessage(rawPackage[1], rawPackage[2], rawPackage[3],
+                rawPackage[4]);
+        }
+        case 3: {
+            return new AcceptRejectMessage(rawPackage[1], rawPackage[2], rawPackage[3],
+                rawPackage[4], rawPackage[10], rawPackage[11]);
+        }
+        case 4: {
+            return new PingMessage(rawPackage[1], rawPackage[2], rawPackage[3],
+                rawPackage[4], rawPackage[10], rawPackage[11], rawPackage[12]);
+        }
+        case 5: {
             uint8_t numberHopsInRoute = 0;
             while (rawPackage[11 + numberHopsInRoute] != 0) numberHopsInRoute++;
-            return new RouteCreationMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage + 11, numberHopsInRoute);
-        case 6:
-            return new AddRemoveToGroupMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage[11]);
-        default:
+            return new RouteCreationMessage(rawPackage[1], rawPackage[2], rawPackage[3],
+                rawPackage[4], rawPackage[10], rawPackage + 11, numberHopsInRoute);
+        }
+        case 6: {
+            return new AddRemoveToGroupMessage(rawPackage[1], rawPackage[2], rawPackage[3],
+                rawPackage[4], rawPackage[10], rawPackage[11]);
+        }
+        default: {
             break;
+        }
     }
     return nullptr;
 }

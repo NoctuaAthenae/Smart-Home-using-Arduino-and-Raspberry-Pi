@@ -4,8 +4,9 @@
 #include <utility>
 #include <vector>
 #include <cstring>
+#include <functional>
 
-#define VERSION 0
+#define NETWORLPROTOCOL_VERSION 0
 
 /**
  * Base class for all messages.
@@ -59,7 +60,9 @@ public:
     /**
      * @return Type of this message.
      */
-    virtual uint8_t getType();
+    virtual uint8_t getType() {
+        return 0;
+    };
 
     /**
      * @return True, if this message is addressed to a group.
@@ -113,13 +116,13 @@ public:
      * @param typeAndGroups Message type and group flags.
      */
     Message(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups) {
-        this->version = VERSION;
+        this->version = NETWORLPROTOCOL_VERSION;
         this->receiver = receiver;
         this->lastDeviceId = lastDeviceId;
         this->nextHop = nextHop;
         this->typeAndGroups = typeAndGroups;
-        this->timestamp = 0;
         this->checksum = 0;
+        this->timestamp = 0;
     }
 
 protected:
@@ -229,7 +232,7 @@ public:
      * @return Vector with all messages.
      */
     std::vector<uint8_t*> getRawPackages() override {
-        throw std::__throw_bad_function_call();
+        throw std::bad_function_call();
     };
 
     /**
