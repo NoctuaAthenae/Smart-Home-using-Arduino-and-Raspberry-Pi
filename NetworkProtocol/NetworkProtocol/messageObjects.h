@@ -1,5 +1,6 @@
 #ifndef NETWORKPROTOCOL_MESSAGEOBJECTS_H
 #define NETWORKPROTOCOL_MESSAGEOBJECTS_H
+#include <chrono>
 #include <cstdint>
 #include <utility>
 #include <vector>
@@ -382,7 +383,6 @@ public:
      * @param lastDeviceId Last device, that handled the message.
      * @param nextHop Next device, that has to handle the message.
      * @param typeAndGroups Message type and group flags.
-     * @param givenId The ID given to the new device.
      * @param isAccept Indicates whether this is an accept or reject message.
      */
     explicit AcceptRejectMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, bool isAccept)
@@ -397,7 +397,6 @@ public:
      * @param nextHop Next device, that has to handle the message.
      * @param group Is the receiver a group.
      * @param groupAscending Is the receiver ascending to the hub.
-     * @param givenId The ID given to the new device.
      * @param isAccept Indicates whether this is an accept or reject message.
      */
     explicit AcceptRejectMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, bool isAccept)
@@ -453,14 +452,15 @@ public:
      * @param nextHop Next device, that has to handle the message.
      * @param group Is the receiver a group.
      * @param groupAscending Is the receiver ascending to the hub.
-     * @param pingId ID of this ping.
-     * @param senderId Sender of this ping.
      * @param isResponse Indicates whether this is a ping or a response to one.
      */
-    explicit PingMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, uint8_t pingId, uint8_t senderId, bool isResponse)
-        : Message(receiver, lastDeviceId, nextHop, group, groupAscending) {
-        this->pingId = pingId;
-        this->senderId = senderId;
+    explicit PingMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, bool isResponse)
+    : Message(receiver, lastDeviceId, nextHop, group, groupAscending) {
+
+        auto now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch();
+
+        this->pingId = now.count() % 256;
+        this->senderId = lastDeviceId;
         this->isResponse = isResponse;
     }
 
