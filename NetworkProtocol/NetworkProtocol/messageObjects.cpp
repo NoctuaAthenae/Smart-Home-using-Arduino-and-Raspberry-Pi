@@ -100,7 +100,8 @@ std::vector<uint8_t*> Message::getRawPackages() {
         0
     };
 
-    rawPackage[4] += this->getType() << 2;
+    // if smaller than 4, type is not set yet
+    if (this->typeAndGroups < 4) rawPackage[4] += this->getType() << 2;
 
     std::memcpy(rawPackage + 6, &(this->timestamp), 4);
 
