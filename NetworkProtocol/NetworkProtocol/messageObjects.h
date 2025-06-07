@@ -49,6 +49,8 @@ public:
      * 1 bit Group Ascending Flag
      * 6 bit message type
      * To get type: shift 2 to the right.
+     * Type is hardcoded in the message class.
+     * Type is still saved for received messages, but not used.
      */
     uint8_t typeAndGroups;
 
@@ -109,7 +111,7 @@ public:
     static void cleanUp(const std::vector<uint8_t*>* packages);
 
     /**
-     * Base constructor for a new Message.
+     * Base constructor for a received Message.
      * @param receiver Receiver of this message.
      * @param lastDeviceId Last device, that handled the message.
      * @param nextHop Next device, that has to handle the message.
@@ -121,6 +123,26 @@ public:
         this->lastDeviceId = lastDeviceId;
         this->nextHop = nextHop;
         this->typeAndGroups = typeAndGroups;
+        this->checksum = 0;
+        this->timestamp = 0;
+    }
+
+    /**
+     * Base constructor for a new Message.
+     * @param receiver Receiver of this message.
+     * @param lastDeviceId Last device, that handled the message.
+     * @param nextHop Next device, that has to handle the message.
+     * @param group Is the receiver a group.
+     * @param groupAscending Is the receiver ascending to the hub.
+     */
+    Message(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending) {
+        this->version = NETWORLPROTOCOL_VERSION;
+        this->receiver = receiver;
+        this->lastDeviceId = lastDeviceId;
+        this->nextHop = nextHop;
+        this->typeAndGroups = 0;
+        setGroup(group);
+        setGroupAscending(groupAscending);
         this->checksum = 0;
         this->timestamp = 0;
     }
@@ -154,6 +176,23 @@ public:
      */
     explicit CommandMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t command, std::vector<uint8_t>* content)
         : Message(receiver, lastDeviceId, nextHop, typeAndGroups) {
+
+        this->command = command;
+        this->content = content;
+    }
+
+    /**
+    * Constructor for command messages.
+     * @param receiver Receiver of this message.
+     * @param lastDeviceId Last device, that handled the message.
+     * @param nextHop Next device, that has to handle the message.
+     * @param group Is the receiver a group.
+     * @param groupAscending Is the receiver ascending to the hub.
+     * @param command Command type of the message.
+     * @param content Parameters and other content of the command.
+     */
+    explicit CommandMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, uint8_t command, std::vector<uint8_t>* content)
+        : Message(receiver, lastDeviceId, nextHop, group, groupAscending) {
 
         this->command = command;
         this->content = content;
@@ -212,6 +251,29 @@ public:
     }
 
     /**
+    * Constructor for partial command messages.
+     * @param receiver Receiver of this message.
+     * @param lastDeviceId Last device, that handled the message.
+     * @param nextHop Next device, that has to handle the message.
+     * @param group Is the receiver a group.
+     * @param groupAscending Is the receiver ascending to the hub.
+     * @param packageNumber Number of this package.
+     * @param content Parameters and other content of the command.
+     * @param timestamp Timestamp and identifier of the message.
+     */
+    explicit PartialCommandMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, uint8_t packageNumber, const uint8_t* content, const uint8_t* timestamp)
+        : Message(receiver, lastDeviceId, nextHop, group, groupAscending) {
+
+        this->packageNumber = packageNumber;
+        this->content = new std::vector<uint8_t>();
+        for (uint8_t i = 0; i < 21; i++) {
+            this->content->push_back(*(content + i));
+        }
+        this->timestamp = 0;
+        memcpy(&this->timestamp, timestamp, 4);
+    }
+
+    /**
      * Package number of the message.
      */
     uint8_t packageNumber;
@@ -253,10 +315,24 @@ public:
      * @param receiver Receiver of the message. Always the same as nextHop.
      * @param lastDeviceId Last device, that handled the message.
      * @param typeAndGroups Message type and group flags.
+     * @param timestamp Timestamp of the original message. Has to be a pointer to an uint32_t.
+     */
+    explicit AcknowledgeMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t typeAndGroups, const uint8_t* timestamp)
+    : Message(receiver, lastDeviceId, receiver, typeAndGroups) {
+        this->timestamp = 0;
+        memcpy(&this->timestamp, timestamp, 4);
+    }
+
+    /**
+     * Constructor for an acknowledge message.
+     * @param receiver Receiver of the message. Always the same as nextHop.
+     * @param lastDeviceId Last device, that handled the message.
+     * @param group Is the receiver a group.
+     * @param groupAscending Is the receiver ascending to the hub.
      * @param timestamp Timestamp of the original message.
      */
-    explicit AcknowledgeMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t typeAndGroups, uint32_t timestamp)
-        : Message(receiver, lastDeviceId, receiver, typeAndGroups) {
+    explicit AcknowledgeMessage(uint8_t receiver, uint8_t lastDeviceId, bool group, bool groupAscending, uint32_t timestamp)
+    : Message(receiver, lastDeviceId, receiver, group, groupAscending) {
         this->timestamp = timestamp;
     }
 
@@ -316,6 +392,22 @@ public:
     }
 
     /**
+     * Constructor for accept or reject messages.
+     * @param receiver Receiver of this message.
+     * @param lastDeviceId Last device, that handled the message.
+     * @param nextHop Next device, that has to handle the message.
+     * @param group Is the receiver a group.
+     * @param groupAscending Is the receiver ascending to the hub.
+     * @param givenId The ID given to the new device.
+     * @param isAccept Indicates whether this is an accept or reject message.
+     */
+    explicit AcceptRejectMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, uint8_t givenId, bool isAccept)
+        : Message(receiver, lastDeviceId, nextHop, group, groupAscending) {
+        this->givenId = givenId;
+        this->isAccept = isAccept;
+    }
+
+    /**
      * ID given to the new device.
      */
     uint8_t givenId;
@@ -356,6 +448,24 @@ public:
      */
     explicit PingMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t pingId, uint8_t senderId, bool isResponse)
         : Message(receiver, lastDeviceId, nextHop, typeAndGroups) {
+        this->pingId = pingId;
+        this->senderId = senderId;
+        this->isResponse = isResponse;
+    }
+
+    /**
+    * Constructor for ping and ping and response messages.
+     * @param receiver Receiver of this message.
+     * @param lastDeviceId Last device, that handled the message.
+     * @param nextHop Next device, that has to handle the message.
+     * @param group Is the receiver a group.
+     * @param groupAscending Is the receiver ascending to the hub.
+     * @param pingId ID of this ping.
+     * @param senderId Sender of this ping.
+     * @param isResponse Indicates whether this is a ping or a response to one.
+     */
+    explicit PingMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, uint8_t pingId, uint8_t senderId, bool isResponse)
+        : Message(receiver, lastDeviceId, nextHop, group, groupAscending) {
         this->pingId = pingId;
         this->senderId = senderId;
         this->isResponse = isResponse;
@@ -414,6 +524,25 @@ public:
     }
 
     /**
+     * Constructor for route creation messages.
+     * @param receiver Receiver of this message.
+     * @param lastDeviceId Last device, that handled the message.
+     * @param nextHop Next device, that has to handle the message.
+     * @param group Is the receiver a group.
+     * @param groupAscending Is the receiver ascending to the hub.
+     * @param newId ID of the new device. 0 if the device has not been been registered before.
+     * @param route Route to the new device so far.
+     * @param numberHopsInRoute Number of hops in the route so far.
+     */
+    explicit RouteCreationMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, uint8_t newId, const uint8_t* route, uint8_t numberHopsInRoute)
+        : Message(receiver, lastDeviceId, nextHop, group, groupAscending) {
+        this->newId = newId;
+        for (int i = 0; i < numberHopsInRoute; i++) {
+            this->route[i] = route[i];
+        }
+    }
+
+    /**
      * ID of the new device. 0 if the device has not been been registered before.
      */
     uint8_t newId;
@@ -453,6 +582,22 @@ public:
      */
     explicit AddRemoveToGroupMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t groupId, bool isAddToGroup)
         : Message(receiver, lastDeviceId, nextHop, typeAndGroups) {
+        this->groupId = groupId;
+        this->isAddToGroup = isAddToGroup;
+    }
+
+    /**
+     * Constructor for messages to add or remove devices to/from a group.
+     * @param receiver Receiver of this message.
+     * @param lastDeviceId Last device, that handled the message.
+     * @param nextHop Next device, that has to handle the message.
+     * @param group Is the receiver a group.
+     * @param groupAscending Is the receiver ascending to the hub.
+     * @param groupId ID of the group.
+     * @param isAddToGroup True if the device has to be added to the given group, false if it has to be removed from it.
+     */
+    explicit AddRemoveToGroupMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, uint8_t groupId, bool isAddToGroup)
+        : Message(receiver, lastDeviceId, nextHop, group, groupAscending) {
         this->groupId = groupId;
         this->isAddToGroup = isAddToGroup;
     }

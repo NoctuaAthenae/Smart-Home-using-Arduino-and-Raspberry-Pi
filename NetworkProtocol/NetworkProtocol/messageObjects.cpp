@@ -57,7 +57,7 @@ Message *Message::fromRawBytes(const uint8_t *rawPackage) {
         }
         case 1: {
             return new AcknowledgeMessage(rawPackage[1], rawPackage[2], rawPackage[4],
-                rawPackage[6]);
+                rawPackage + 6);
         }
         case 2: {
             return new RegisterMessage(rawPackage[1], rawPackage[2], rawPackage[3],
@@ -99,6 +99,8 @@ std::vector<uint8_t*> Message::getRawPackages() {
         this->typeAndGroups,
         0
     };
+
+    rawPackage[4] += this->getType() << 2;
 
     std::memcpy(rawPackage + 6, &(this->timestamp), 4);
 
