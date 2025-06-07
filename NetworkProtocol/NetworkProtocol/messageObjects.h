@@ -524,15 +524,10 @@ public:
      * @param group Is the receiver a group.
      * @param groupAscending Is the receiver ascending to the hub.
      * @param newId ID of the new device. 0 if the device has not been been registered before.
-     * @param route Route to the new device so far.
-     * @param numberHopsInRoute Number of hops in the route so far.
      */
-    explicit RouteCreationMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, uint8_t newId, const uint8_t* route, uint8_t numberHopsInRoute)
+    explicit RouteCreationMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, uint8_t newId)
         : Message(receiver, lastDeviceId, nextHop, group, groupAscending) {
         this->newId = newId;
-        for (int i = 0; i < numberHopsInRoute; i++) {
-            this->route[i] = route[i];
-        }
     }
 
     /**
