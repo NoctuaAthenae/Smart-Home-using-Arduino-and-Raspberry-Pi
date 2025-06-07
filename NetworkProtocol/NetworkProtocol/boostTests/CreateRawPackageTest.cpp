@@ -178,6 +178,82 @@ BOOST_AUTO_TEST_CASE(PingRawPackageTest) {
 }
 
 
+BOOST_AUTO_TEST_CASE(RouteCreationRawPackageTest) {
+    uint8_t id = std::rand() % 256;
+    uint8_t lastDevive = std::rand() % 256;
+    uint32_t timestamp = std::rand();
+    uint8_t nextHop = std::rand() % 256;
+    uint8_t newId = std::rand() % 256;
+    RouteCreationMessage msg = RouteCreationMessage(id, lastDevive, nextHop, false, false, newId);
+
+    msg.timestamp = timestamp;
+    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+
+    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+
+    uint8_t *package = rawPackages.at(0);
+
+    BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
+    BOOST_CHECK_EQUAL(package[1], id);
+    BOOST_CHECK_EQUAL(package[2], lastDevive);
+    BOOST_CHECK_EQUAL(package[3], nextHop);
+    BOOST_CHECK_EQUAL(package[4] / 4, 5);
+    BOOST_CHECK_EQUAL(package[10], newId);
+    BOOST_CHECK_EQUAL(package[11], lastDevive);
+
+    uint32_t createdTimestamp = 0;
+    memcpy(&createdTimestamp, package + 6, sizeof(uint32_t));
+
+    BOOST_CHECK_EQUAL(createdTimestamp, timestamp);
+
+    BOOST_CHECK(Message::checkChecksum(package));
+
+
+    auto* createdMsg = (RouteCreationMessage*) Message::fromRawBytes(rawPackages.at(0));
+
+    BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
+    BOOST_CHECK_EQUAL(createdMsg->receiver, id);
+    BOOST_CHECK_EQUAL(createdMsg->lastDeviceId, lastDevive);
+    BOOST_CHECK_EQUAL(createdMsg->nextHop, nextHop);
+    BOOST_CHECK_EQUAL(createdMsg->newId, newId);
+    BOOST_CHECK_EQUAL(createdMsg->route[0], lastDevive);
+    BOOST_CHECK_EQUAL(createdMsg->typeAndGroups / 4, 5);
+    BOOST_CHECK_EQUAL(createdMsg->getType(), 5);
+
+
+    createdMsg->lastDeviceId = createdMsg->nextHop;
+    uint8_t otherHop = std::rand() % 256;
+    createdMsg->nextHop = otherHop;
+
+    uint8_t* secondPackage = createdMsg->getRawPackages().at(0);
+
+    BOOST_CHECK_EQUAL(secondPackage[0], NETWORKPROTOCOL_VERSION);
+    BOOST_CHECK_EQUAL(secondPackage[1], id);
+    BOOST_CHECK_EQUAL(secondPackage[2], nextHop);
+    BOOST_CHECK_EQUAL(secondPackage[3], otherHop);
+    BOOST_CHECK_EQUAL(secondPackage[4] / 4, 5);
+    BOOST_CHECK_EQUAL(secondPackage[10], newId);
+    BOOST_CHECK_EQUAL(secondPackage[11], lastDevive);
+    BOOST_CHECK_EQUAL(secondPackage[12], nextHop);
+
+    auto* secondMessage = (RouteCreationMessage*) Message::fromRawBytes(secondPackage);
+
+    BOOST_CHECK_EQUAL(secondMessage->version, NETWORKPROTOCOL_VERSION);
+    BOOST_CHECK_EQUAL(secondMessage->receiver, id);
+    BOOST_CHECK_EQUAL(secondMessage->lastDeviceId, nextHop);
+    BOOST_CHECK_EQUAL(secondMessage->nextHop, otherHop);
+    BOOST_CHECK_EQUAL(secondMessage->newId, newId);
+    BOOST_CHECK_EQUAL(secondMessage->route[0], lastDevive);
+    BOOST_CHECK_EQUAL(secondMessage->route[1], nextHop);
+    BOOST_CHECK_EQUAL(secondMessage->getType(), 5);
+
+
+    package[2] = lastDevive + 1;
+    BOOST_CHECK(!Message::checkChecksum(package));
+
+}
+
+
 BOOST_AUTO_TEST_CASE(AddRemoveToGroupRawPackageTest) {
     uint8_t id = std::rand() % 256;
     uint8_t lastDevive = std::rand() % 256;
