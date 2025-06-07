@@ -51,7 +51,7 @@ Message *Message::fromRawBytes(const uint8_t *rawPackage) {
 
     switch (type) {
         case 0:
-            break;
+            return new PartialCommandMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage + 11, rawPackage + 6);
         case 1:
             return new AcknowledgeMessage(rawPackage[1], rawPackage[2], rawPackage[4], rawPackage[6]);
         case 2:
@@ -66,7 +66,10 @@ Message *Message::fromRawBytes(const uint8_t *rawPackage) {
             return new RouteCreationMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage + 11, numberHopsInRoute);
         case 6:
             return new AddRemoveToGroupMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], rawPackage[10], rawPackage[11]);
+        default:
+            break;
     }
+    return nullptr;
 }
 
 
@@ -113,9 +116,9 @@ std::vector<uint8_t*> CommandMessage::getRawPackages() {
     for (uint8_t i = 0; i < numberPackages; i++) {
         // first package saves total number of packages number of package and command
         if (i == 0) {
-            rawPackages.at(0)[10] = this->command;
+            rawPackages.at(0)[10] = 0;
             rawPackages.at(0)[11] = numberPackages;
-            rawPackages.at(0)[12] = 0;
+            rawPackages.at(0)[12] = this->command;
             memcpy(rawPackages.at(0) + 13, &this->content->at(0), i == numberPackages - 1 ? lastPackageSize : 19);
             addChecksum(rawPackages.at(0));
             continue;

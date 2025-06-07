@@ -139,6 +139,7 @@ protected:
  * Class for command messages.
  */
 class CommandMessage : public Message {
+public:
     /**
     * Constructor for command messages.
      * @param receiver Receiver of this message.
@@ -184,8 +185,9 @@ class CommandMessage : public Message {
  * Class for partial command messages. Used when command messages arrive, but consist of multiple packages.
  */
 class PartialCommandMessage : public Message {
+public:
     /**
-    * Constructor for command messages.
+    * Constructor for partial command messages.
      * @param receiver Receiver of this message.
      * @param lastDeviceId Last device, that handled the message.
      * @param nextHop Next device, that has to handle the message.
@@ -194,12 +196,16 @@ class PartialCommandMessage : public Message {
      * @param content Parameters and other content of the command.
      * @param timestamp Timestamp and identifier of the message.
      */
-    explicit PartialCommandMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t packageNumber, std::vector<uint8_t>* content, uint32_t timestamp)
+    explicit PartialCommandMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t packageNumber, const uint8_t* content, const uint8_t* timestamp)
         : Message(receiver, lastDeviceId, nextHop, typeAndGroups) {
 
         this->packageNumber = packageNumber;
-        this->content = content;
-        this->timestamp = timestamp;
+        this->content = new std::vector<uint8_t>();
+        for (uint8_t i = 0; i < 21; i++) {
+            this->content->push_back(*(content + i));
+        }
+        this->timestamp = 0;
+        memcpy(&this->timestamp, timestamp, 4);
     }
 
     /**
