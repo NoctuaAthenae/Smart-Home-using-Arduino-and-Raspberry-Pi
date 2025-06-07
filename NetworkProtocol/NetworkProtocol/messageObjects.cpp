@@ -65,7 +65,7 @@ Message *Message::fromRawBytes(const uint8_t *rawPackage) {
         }
         case 3: {
             return new AcceptRejectMessage(rawPackage[1], rawPackage[2], rawPackage[3],
-                rawPackage[4], rawPackage[10], rawPackage[11]);
+                rawPackage[4], rawPackage[10]);
         }
         case 4: {
             return new PingMessage(rawPackage[1], rawPackage[2], rawPackage[3],
@@ -171,8 +171,7 @@ std::vector<uint8_t*> RegisterMessage::getRawPackages() {
 
 std::vector<uint8_t*> AcceptRejectMessage::getRawPackages() {
     std::vector<uint8_t*> rawPackages = Message::getRawPackages();
-    rawPackages.at(0)[10] = this->givenId;
-    rawPackages.at(0)[11] = this->isAccept;
+    rawPackages.at(0)[10] = this->isAccept;
     addChecksum(rawPackages.at(0));
     return rawPackages;
 }

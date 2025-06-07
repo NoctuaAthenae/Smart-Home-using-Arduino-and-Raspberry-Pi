@@ -385,9 +385,8 @@ public:
      * @param givenId The ID given to the new device.
      * @param isAccept Indicates whether this is an accept or reject message.
      */
-    explicit AcceptRejectMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t givenId, bool isAccept)
+    explicit AcceptRejectMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, bool isAccept)
         : Message(receiver, lastDeviceId, nextHop, typeAndGroups) {
-        this->givenId = givenId;
         this->isAccept = isAccept;
     }
 
@@ -401,16 +400,10 @@ public:
      * @param givenId The ID given to the new device.
      * @param isAccept Indicates whether this is an accept or reject message.
      */
-    explicit AcceptRejectMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, uint8_t givenId, bool isAccept)
+    explicit AcceptRejectMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending, bool isAccept)
         : Message(receiver, lastDeviceId, nextHop, group, groupAscending) {
-        this->givenId = givenId;
         this->isAccept = isAccept;
     }
-
-    /**
-     * ID given to the new device.
-     */
-    uint8_t givenId;
 
     /**
      * Indicates whether the new device is accepted or rejected.

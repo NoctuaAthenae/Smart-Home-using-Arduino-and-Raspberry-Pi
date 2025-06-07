@@ -60,7 +60,6 @@ void connect(byte parent)
 Accepts or rejects the endpoint, that is trying to register.\
 Additional fields:
 - 1 Byte: Accept (1)/Reject (0)
-- 1 Byte: Given ID
 Only sent by the protocol.
 
 ### Ping (4)
