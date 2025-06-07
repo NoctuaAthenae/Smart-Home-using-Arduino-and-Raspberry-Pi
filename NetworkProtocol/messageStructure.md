@@ -28,13 +28,13 @@ Each message consists of the following fields:
 Commands are used for exchanging data between the network members. It can consist of a single command or a command with parameters. Commands are stored in one byte, limiting the number of possible commands to 255,
 while the parameters can have variable data lengths. It also sends a timestamp for identifying messages. The message is repeated if there is no acknowledge message after a timeout.\
 Additional fields:
-- 1 Byte: Package number
-- 1 Byte: Total packages
 - 1 Byte: Command (only for first package)
+- 1 Byte: Total packages (only for first package)
+- 1 Byte: Package number
 - Variabel: Parameters
 
-The total size of meta data for a command package is 12 Bytes, which leaves 20 Bytes per Package as the maximum for a nRF24L01 is 32 Bytes. Since there is 1 Byte for package numbers, there can be a maximum of 256 packages, 
-which means the parameters can have 5 120 - 1 (Command) = 5 119 bytes at max.
+The total size of meta data for a command package is 11 Bytes, which leaves 21 Bytes per Package as the maximum for a nRF24L01 is 32 Bytes. Since there is 1 Byte for package numbers, there can be a maximum of 256 packages, 
+which means the parameters can have 5 376 - 2 (Command) = 5 374 bytes at max.
 
 ```
 void send(byte destination, byte command, byte[] payload)
