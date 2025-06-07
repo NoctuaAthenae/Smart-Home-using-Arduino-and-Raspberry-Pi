@@ -266,6 +266,12 @@ public:
     uint8_t getType() override {
         return 1;
     }
+
+    /**
+     * Creates a vector with only one element, which is a byte representation of this message.
+     * @return A vector with byte representation of this message.
+     */
+    std::vector<uint8_t*> getRawPackages() override;
 };
 
 /**
@@ -281,6 +287,12 @@ public:
     uint8_t getType() override {
         return 2;
     }
+
+    /**
+     * Creates a vector with only one element, which is a byte representation of this message.
+     * @return A vector with byte representation of this message.
+     */
+    std::vector<uint8_t*> getRawPackages() override;
 };
 
 /**

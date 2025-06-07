@@ -155,6 +155,18 @@ std::vector<uint8_t*> CommandMessage::getRawPackages() {
     return rawPackages;
 }
 
+std::vector<uint8_t*> AcknowledgeMessage::getRawPackages() {
+    std::vector<uint8_t*> rawPackages = Message::getRawPackages();
+    addChecksum(rawPackages.at(0));
+    return rawPackages;
+}
+
+std::vector<uint8_t*> RegisterMessage::getRawPackages() {
+    std::vector<uint8_t*> rawPackages = Message::getRawPackages();
+    addChecksum(rawPackages.at(0));
+    return rawPackages;
+}
+
 std::vector<uint8_t*> AcceptRejectMessage::getRawPackages() {
     std::vector<uint8_t*> rawPackages = Message::getRawPackages();
     rawPackages.at(0)[10] = this->givenId;
