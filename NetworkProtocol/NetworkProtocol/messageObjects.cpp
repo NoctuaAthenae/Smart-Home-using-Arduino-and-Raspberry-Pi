@@ -100,14 +100,14 @@ std::vector<uint8_t*> CommandMessage::getRawPackages() {
 
     // first package has 19 slots, all others 21
     // if 20 slots are used: (20 + 1) / 21 + 1 = 21 / 21 + 1 = 2
-    uint8_t numberPackages = (this->content.size() + 1) / 21 + 1;
+    uint8_t numberPackages = (this->content->size() + 1) / 21 + 1;
 
     // use the created package as a template
     uint8_t* templatePackage = rawPackages.at(0);
 
     // the last package is not completely filled
     // remove 19 for first package and 21 for all other packages beside the last
-    uint8_t lastPackageSize = this->content.size() -
+    uint8_t lastPackageSize = this->content->size() -
         (numberPackages == 1 ? 0 : (19 + (numberPackages - 2) * 21));
 
     for (uint8_t i = 0; i < numberPackages; i++) {
@@ -116,7 +116,7 @@ std::vector<uint8_t*> CommandMessage::getRawPackages() {
             rawPackages.at(0)[10] = this->command;
             rawPackages.at(0)[11] = numberPackages;
             rawPackages.at(0)[12] = 0;
-            memcpy(rawPackages.at(0) + 13, &this->content[0], i == numberPackages - 1 ? lastPackageSize : 19);
+            memcpy(rawPackages.at(0) + 13, &this->content->at(0), i == numberPackages - 1 ? lastPackageSize : 19);
             addChecksum(rawPackages.at(0));
             continue;
         }
@@ -127,7 +127,7 @@ std::vector<uint8_t*> CommandMessage::getRawPackages() {
         package[10] = i;
 
         // copy the corresponding content into the slots
-        memcpy(package + 11, &this->content[19 + 21 * (i - 1)], i == numberPackages - 1 ? lastPackageSize : 21);
+        memcpy(package + 11, &this->content->at(19 + 21 * (i - 1)), i == numberPackages - 1 ? lastPackageSize : 21);
 
         addChecksum(package);
         rawPackages.push_back(package);

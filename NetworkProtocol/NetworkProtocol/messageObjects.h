@@ -148,11 +148,11 @@ class CommandMessage : public Message {
      * @param command Command type of the message.
      * @param content Parameters and other content of the command.
      */
-    explicit CommandMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t command, std::vector<uint8_t> content)
+    explicit CommandMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t command, std::vector<uint8_t>* content)
         : Message(receiver, lastDeviceId, nextHop, typeAndGroups) {
 
         this->command = command;
-        this->content = std::move(content);
+        this->content = content;
     }
 
     /**
@@ -163,7 +163,7 @@ class CommandMessage : public Message {
     /**
      * Parameters and other content of the message.
      */
-    std::vector<uint8_t> content;
+    std::vector<uint8_t>* content;
 
     /**
      * Converts the messages to arrays of 32 bytes.
@@ -171,6 +171,60 @@ class CommandMessage : public Message {
      * @return Vector with all messages.
      */
     std::vector<uint8_t*> getRawPackages() override;
+
+    /**
+     * @return Type of this message.
+     */
+    uint8_t getType() override {
+        return 0;
+    }
+};
+
+/**
+ * Class for partial command messages. Used when command messages arrive, but consist of multiple packages.
+ */
+class PartialCommandMessage : public Message {
+    /**
+    * Constructor for command messages.
+     * @param receiver Receiver of this message.
+     * @param lastDeviceId Last device, that handled the message.
+     * @param nextHop Next device, that has to handle the message.
+     * @param typeAndGroups Message type and group flags.
+     * @param packageNumber Number of this package.
+     * @param content Parameters and other content of the command.
+     * @param timestamp Timestamp and identifier of the message.
+     */
+    explicit PartialCommandMessage(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups, uint8_t packageNumber, std::vector<uint8_t>* content, uint32_t timestamp)
+        : Message(receiver, lastDeviceId, nextHop, typeAndGroups) {
+
+        this->packageNumber = packageNumber;
+        this->content = content;
+        this->timestamp = timestamp;
+    }
+
+    /**
+     * Package number of the message.
+     */
+    uint8_t packageNumber;
+
+    /**
+     * Parameters and other content of this part of the message.
+     */
+    std::vector<uint8_t>* content;
+
+    /**
+     * Timestamp and identifier of the message.
+     */
+    uint32_t timestamp;
+
+    /**
+     * Converts the messages to arrays of 32 bytes.
+     * For messages larger than 32 bytes, the message is split and each message is added to the returned vector.
+     * @return Vector with all messages.
+     */
+    std::vector<uint8_t*> getRawPackages() override {
+        throw std::__throw_bad_function_call();
+    };
 
     /**
      * @return Type of this message.
