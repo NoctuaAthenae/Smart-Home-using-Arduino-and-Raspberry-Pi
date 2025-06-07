@@ -6,7 +6,7 @@
 #include <cstring>
 #include <functional>
 
-#define NETWORLPROTOCOL_VERSION 0
+#define NETWORKPROTOCOL_VERSION 0
 
 /**
  * Base class for all messages.
@@ -118,7 +118,7 @@ public:
      * @param typeAndGroups Message type and group flags.
      */
     Message(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, uint8_t typeAndGroups) {
-        this->version = NETWORLPROTOCOL_VERSION;
+        this->version = NETWORKPROTOCOL_VERSION;
         this->receiver = receiver;
         this->lastDeviceId = lastDeviceId;
         this->nextHop = nextHop;
@@ -136,7 +136,7 @@ public:
      * @param groupAscending Is the receiver ascending to the hub.
      */
     Message(uint8_t receiver, uint8_t lastDeviceId, uint8_t nextHop, bool group, bool groupAscending) {
-        this->version = NETWORLPROTOCOL_VERSION;
+        this->version = NETWORKPROTOCOL_VERSION;
         this->receiver = receiver;
         this->lastDeviceId = lastDeviceId;
         this->nextHop = nextHop;

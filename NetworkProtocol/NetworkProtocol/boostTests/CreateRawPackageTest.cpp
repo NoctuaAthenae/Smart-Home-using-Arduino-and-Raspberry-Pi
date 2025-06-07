@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(AckRawPackageTest) {
 
     uint8_t *package = rawPackages.at(0);
 
-    BOOST_CHECK_EQUAL(package[0], NETWORLPROTOCOL_VERSION);
+    BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
     BOOST_CHECK_EQUAL(package[2], lastDevive);
     BOOST_CHECK_EQUAL(package[3], id);
@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(AckRawPackageTest) {
 
     auto* createdMsg = Message::fromRawBytes(rawPackages.at(0));
 
-    BOOST_CHECK_EQUAL(createdMsg->version, NETWORLPROTOCOL_VERSION);
+    BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
     BOOST_CHECK_EQUAL(createdMsg->lastDeviceId, lastDevive);
     BOOST_CHECK_EQUAL(createdMsg->nextHop, id);
