@@ -56,11 +56,6 @@ public:
     uint8_t typeAndGroups;
 
     /**
-     * Checksum to check for transmission errors.
-     */
-    uint8_t checksum;
-
-    /**
      * @return Type of this message.
      */
     virtual uint8_t getType() {
@@ -124,7 +119,6 @@ public:
         this->lastDeviceId = lastDeviceId;
         this->nextHop = nextHop;
         this->typeAndGroups = typeAndGroups;
-        this->checksum = 0;
         this->timestamp = 0;
     }
 
@@ -144,7 +138,6 @@ public:
         this->typeAndGroups = 0;
         setGroup(group);
         setGroupAscending(groupAscending);
-        this->checksum = 0;
         this->timestamp = 0;
     }
 
