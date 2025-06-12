@@ -8,6 +8,81 @@
 
 BOOST_AUTO_TEST_SUITE(RawPackage)
 
+BOOST_AUTO_TEST_CASE(CommandRawPackageTest) {
+
+    uint8_t contentSizes[] = {19, 20, 40, 41, 61, 62};
+    uint8_t numberPackages[] = {1, 2, 2, 3, 3, 4};
+
+    for (int i = 0; i < 6; i++) {
+
+        uint8_t id = std::rand() % 256;
+        uint8_t lastDevive = std::rand() % 256;
+        uint8_t nextHop = std::rand() % 256;
+        uint8_t command = std::rand() % 256;
+        uint32_t timestamp = std::rand();
+
+        std::vector<uint8_t> content;
+
+        for (int j = 0; j < contentSizes[i]; j++) {
+            content.push_back(std::rand() % 256);
+        }
+
+        CommandMessage msg = CommandMessage(id, lastDevive, nextHop , false, false, command, &content);
+
+        msg.timestamp = timestamp;
+
+        std::vector<uint8_t*> rawPackages = msg.getRawPackages();
+
+        BOOST_CHECK_EQUAL(rawPackages.size(), numberPackages[i]);
+
+        for (int j = 0; j < numberPackages[i]; j++) {
+
+            uint8_t *package = rawPackages.at(j);
+
+            BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
+            BOOST_CHECK_EQUAL(package[1], id);
+            BOOST_CHECK_EQUAL(package[2], lastDevive);
+            BOOST_CHECK_EQUAL(package[3], nextHop);
+            BOOST_CHECK_EQUAL(package[4] / 4, 0);
+            BOOST_CHECK_EQUAL(package[10], j);
+
+            uint32_t createdTimestamp = 0;
+            memcpy(&createdTimestamp, package + 6, sizeof(uint32_t));
+
+            BOOST_CHECK_EQUAL(createdTimestamp, timestamp);
+
+            BOOST_CHECK(Message::checkChecksum(package));
+
+            auto* createdMsg = (PartialCommandMessage*) Message::fromRawBytes(rawPackages.at(j));
+
+            BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
+            BOOST_CHECK_EQUAL(createdMsg->receiver, id);
+            BOOST_CHECK_EQUAL(createdMsg->lastDeviceId, lastDevive);
+            BOOST_CHECK_EQUAL(createdMsg->nextHop, nextHop);
+            BOOST_CHECK_EQUAL(createdMsg->getType(), 0);
+            BOOST_CHECK_EQUAL(createdMsg->timestamp, timestamp);
+            BOOST_CHECK_EQUAL(createdMsg->packageNumber, j);
+
+            if (j == 0) {
+                BOOST_CHECK_EQUAL((*createdMsg->content)[0], numberPackages[i]);
+                BOOST_CHECK_EQUAL((*createdMsg->content)[1], command);
+                for (int k = 0; k < 19; k++) {
+                    BOOST_CHECK_EQUAL((*createdMsg->content)[2 + k], content[k]);
+                }
+            } else {
+                int numberSlots = j == numberPackages[i] - 1 ? (contentSizes[i] - 19) % 21 : 21;
+                for (int k = 0; k < numberSlots; k++) {
+                    BOOST_CHECK_EQUAL((*createdMsg->content)[k], content[19 + (j - 1) * 21 + k]);
+                }
+            }
+
+
+            package[2] = lastDevive + 1;
+            BOOST_CHECK(!Message::checkChecksum(package));
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(AckRawPackageTest) {
     uint8_t id = std::rand() % 256;
     uint8_t lastDevive = std::rand() % 256;
