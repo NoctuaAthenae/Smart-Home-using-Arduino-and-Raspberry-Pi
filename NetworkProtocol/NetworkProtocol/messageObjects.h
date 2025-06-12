@@ -193,6 +193,14 @@ public:
     }
 
     /**
+     * Constructor for dummy command messages.
+     */
+    explicit CommandMessage() : Message(0, 0, 0, 0) {
+        this->command = 0;
+        this->content = new std::vector<uint8_t>();
+    }
+
+    /**
      * Command type of the message.
      */
     uint8_t command;

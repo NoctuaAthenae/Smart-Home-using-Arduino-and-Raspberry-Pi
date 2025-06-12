@@ -4,5 +4,6 @@ project(NetworkProtocol)
 set(CMAKE_CXX_STANDARD 11)
 
 add_library(NetworkProtocol STATIC messageObjects.cpp
-        boostTests/CreateRawPackageTest.cpp)
+        boostTests/CreateRawPackageTest.cpp
+        messageBuilder.cpp)
 add_subdirectory(boostTests)
