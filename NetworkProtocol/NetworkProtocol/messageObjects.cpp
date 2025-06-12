@@ -28,6 +28,8 @@ bool Message::checkChecksum(uint8_t *rawPackage) {
 }
 
 void Message::addChecksum(uint8_t* rawPackage) {
+    // assure that the checksum is 0 before calculating it
+    rawPackage[5] = 0;
     rawPackage[5] = getChecksum(rawPackage);
 }
 
