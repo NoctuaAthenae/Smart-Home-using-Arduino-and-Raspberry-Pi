@@ -4,7 +4,7 @@ This Network Protocol is used for the communication between the central hub and 
 
 ## IDs
 
-The hub and each endpoint has it's each unique identifier, where the hub has the ID 1. The ID 0 is used for broadcast messages. Also groups can be created and assigned an ID, broadcast to the group ID are received by every endpoint in the group. It is stored in one byte, limiting the number of possible endpoints to 254. Groups have an own address room, where group and endpoint IDs are distinguished by the Group flag. Each member of the network only pays attention to message of it's parents or children and ignores all other messages, that are received from another member in range.
+The hub and each endpoint has it's each unique identifier, where the hub has the ID 1. The ID 0 is used for broadcast messages. Also groups can be created and assigned an ID, broadcast to the group ID are received by every endpoint in the group. It is stored in one byte, limiting the number of possible endpoints to 254. Groups have an own address room, where group and endpoint IDs are distinguished by the Group flag. Each member of the network only pays attention to message of it's parents or children and ignores all other messages, that are accidentally received from another member in range. A message has an transmission identifier, to uniquely identify a message between two hops. If the messages is forwarded further, it gets a new ID. Since the transmission ID has only one byte the number of messages, that can be sent without being acknowledged is limited to 256.
 
 ## Messages
 
@@ -19,22 +19,23 @@ Each message consists of the following fields:
 <a name="GAF"></a>
 - 1 Bit: Group ascending flag (GAF)
 - Variable: Message Type specific fields
-- 4 Byte: Timestamp
+- 1 Byte: Transmission ID
 - 1 Byte: Checksum
-- Total of 10 Bytes for the standard meta data
+- Total of 7 Bytes for the standard meta data
 
 ### Commands (0)
 
-Commands are used for exchanging data between the network members. It can consist of a single command or a command with parameters. Commands are stored in one byte, limiting the number of possible commands to 255,
-while the parameters can have variable data lengths. It also sends a timestamp for identifying messages. The message is repeated if there is no acknowledge message after a timeout.\
+Commands are used for exchanging data between the network members. It can consist of a single command or a command with parameters. Commands are stored in one byte, limiting the number of possible commands to 255, while the parameters can have variable data lengths. Each command message package contains its origin and message ID, which are used to identify the message and reconstruct it.\
 Additional fields:
 - 1 Byte: Command (only for first package)
 - 1 Byte: Total packages (only for first package)
 - 1 Byte: Package number
+- 1 Byte: Origin
+- 2 Byte: Message ID
 - Variabel: Parameters
 
-The total size of meta data for a command package is 11 Bytes, which leaves 21 Bytes per Package as the maximum for a nRF24L01 is 32 Bytes. Since there is 1 Byte for package numbers, there can be a maximum of 256 packages, 
-which means the parameters can have 5 376 - 2 (Command) = 5 374 bytes at max.
+The total size of meta data for a command package is 11 Bytes, which leaves 21 bytes per Package as the maximum for a nRF24L01 is 32 bytes. Since there is 1 byte for package numbers, there can be a maximum of 256 packages, 
+which means the parameters can have 5 376 - 2 (Command and total packages) = 5 374 bytes at max.
 
 ```
 void send(byte destination, byte command, byte[] payload)
@@ -44,7 +45,7 @@ void sendToGroup(byte destination, byte command, byte[] payload)
 
 ### Acknowledge (1)
 
-Confirms the hop, that the message has reached the next hop by responding with the timestamp. This is done hop by hop. The timestamp field here is the timestamp of the incoming message.\
+Confirms the hop, that the message has reached the next hop by responding with the origin and transmission ID. This is done hop by hop. The origin and transmission ID fields here are the origin and transmission ID of the incoming message.\
 Only sent by the protocol.
 
 ### Register (2)
