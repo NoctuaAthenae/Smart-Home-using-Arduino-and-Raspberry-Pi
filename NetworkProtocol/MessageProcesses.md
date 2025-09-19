@@ -14,7 +14,8 @@ send(byte destination, byte messageTypeAndGroupFlags, byte[] payload)
   set version, last hop and receiver
   set message type and group flags
   set payload
-  set timestamp
+  ID = nextID
+  nextID = (nextId + 1) mod 256
   if group flag set:
     if this is hub:
       reset groupAscending flag
