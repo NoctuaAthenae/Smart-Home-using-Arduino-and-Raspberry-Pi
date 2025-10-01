@@ -42,13 +42,7 @@ void send(byte destination, byte command, byte[] payload)
 void sendToGroup(byte destination, byte command, byte[] payload)
 ```
 
-
-### Acknowledge (1)
-
-Confirms the hop, that the message has reached the next hop by responding with the origin and transmission ID. This is done hop by hop. The origin and transmission ID fields here are the origin and transmission ID of the incoming message.\
-Only sent by the protocol.
-
-### Register (2)
+### Register (1)
 
 Registers an endpoint to the network at startup of the endpoint. See Registration for information.
 
@@ -56,14 +50,14 @@ Registers an endpoint to the network at startup of the endpoint. See Registratio
 void connect(byte parent)
 ```
 
-### Accept/Reject (3)
+### Accept/Reject (2)
 
 Accepts or rejects the endpoint, that is trying to register.\
 Additional fields:
 - 1 Byte: Accept (1)/Reject (0)
 Only sent by the protocol.
 
-### Ping (4)
+### Ping (3)
 
 Pings a device.\
 Additional fields:
@@ -77,7 +71,7 @@ void ping(byte destination)
 
 Represents both ping request and response. The response is marked with the IsResponse field
 
-### Route Creation (5)
+### Route Creation (4)
 
 Collects all hops to the hub for the new endpoint and writes the new endpoint into the routing list of each hop. The 8 byte meta data limit the route length to 24 and so the tree height to 24+2=26 (hub and lowest endpoints do not need a spot in the route).\
 Additional fields:
@@ -86,7 +80,7 @@ Additional fields:
 
 Only sent by the protocol.
 
-### Add To/Remove From Group (6)
+### Add To/Remove From Group (5)
 
 Adds or removes an endpoint to/from a group for broadcasting to a group of specific devices.\
 Additional fields:
