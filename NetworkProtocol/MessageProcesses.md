@@ -11,26 +11,25 @@ All messages are added to a send queue. If the message has not been acknowledged
 ```
 send(byte destination, byte messageTypeAndGroupFlags, byte[] payload)
   create message object
-  set version, last hop and receiver
+  set version
   set message type and group flags
   set payload
   ID = nextID
-  nextID = (nextId + 1) mod 256
+  nextID = (nextID + 1) mod 256
   if group flag set:
     if this is hub:
       reset groupAscending flag
     if groupAscending set:
-      set next hop to parent
+      set nextHop to parent
     else:
-      set next hop to self
+      set nextHop to all children
   else:
     if destination in routingList:
-      set next hop according to routing list
+      set nextHop according to routing list
     else:
-      set next hop to parent
+      set nextHop to parent
   set checksum
-  add to send queue
-  send
+  send to nextHop
 ```
 Payload is set according to the message type.
 
@@ -42,21 +41,12 @@ All received messages are added to a receive queue, so if a acknowledgement gets
 
 ```
 receive(Message message)
-  if message.lastHop != parent and message.lastHop not in children:
-    return
   if group flag set:
     if groupAscending not set:
       if this is in message.destination group:
         processMessage(message)
     send(message)
-  else if message.nextHop == this:
-    if isAck:
-      remove message from send queue
-      return
-    sendAck(message.lastHop)
-    if in receive queue:
-      return
-    add to receive queue
+  else:
     if message.destination == this:
       processMessage(message)
     else:
@@ -92,10 +82,10 @@ The `register` method starts the registration at the parent with the given ID.
 
 ```
 register(byte parent)
-  id = tryGetIdFromMemory()
-  if id == null:
-    id = 0
-  this.id = id
+  this.id = tryGetIdFromMemory()
+  if this.id == null:
+    this.tempId = time()
+    this.id = 0
   this.parent = parent
   send(parent, getTypeByte(Register, NoGroup), [])
 ```
