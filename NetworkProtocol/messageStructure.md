@@ -79,7 +79,7 @@ Represents both ping request and response. The response is marked with the IsRes
 
 ### Route Creation (5)
 
-Collects all hops to the hub for the new endpoint and writes the new endpoint into the routing list of each hop.\
+Collects all hops to the hub for the new endpoint and writes the new endpoint into the routing list of each hop. The 8 byte meta data limit the route length to 24 and so the tree height to 24+2=26 (hub and lowest endpoints do not need a spot in the route).\
 Additional fields:
 - 1 Byte: ID of the new endpoint
 - Variabel: Each Hop to the hub
@@ -95,16 +95,25 @@ Additional fields:
 
 Can only be done at the interface of the hub, so the message is only sent by the protocol.
 
+### Error (6)
+
+Signals an error, that occurred during another message.\
+Additional fields:
+- 1 Byte: Error code
+- Variable: First 24 byte of original message
+
+This error message is reserved for use by the protocol. For application errors use the command message.
+
 ## Registration
 
-If the endpoint has been registered already, it sends it's ID to the hub or another endpoint, which will be the new endpoint's parent. The parent sends a Route Creation message to the hub. Each hop on the way adds the new endpoint to it's routing list with all previous hops flagged invalid and adds itself to the hop list of the route creation message. The hub pings the ID of the new endpoint to check if the endpoint tries to hijack an ID.
+If the endpoint has been registered already or is assigned a static ID, it sends it's ID to the hub or another endpoint, which will be the new endpoint's parent. The parent sends a Route Creation message to the hub. Each hop on the way adds the new endpoint to it's routing list with all previous hops flagged invalid and adds itself to the hop list of the route creation message. The hub pings the ID of the new endpoint to check if the endpoint tries to hijack an ID.
 If the ping does not get a response, the registration is accepted and an accept message is sent. Each hop on the way validates the entry in the routing list.\
 If the endpoint is registered the first time, it sends a 0 as ID. The parent sends a Route Creation message to the hub. Each hop on the way adds the new endpoint to it's routing list with all previous hops flagged invalid and with the 0 as ID and adds itself to the hop list of the route creation message. The hub then assigns the next free ID in an accept message if there are is a free ID. Each hop on the way validates the entry and saves the correct ID in the routing list.\
 ![Diagram of an registration process example](Registration.png)
 
 ## Routing List
 
-Each Node has a list with all children and via what children they are reachable. It can have invalid entries flagged valid if an endpoint disconnects, since there are no disconnect messages.\
+Each Node has a list with all children and via which children they are reachable. It can have invalid entries flagged valid if an endpoint disconnects, since there are no disconnect messages.\
 ![Diagram of an routing list example](TreeExample.png)
 
 ## Groups
