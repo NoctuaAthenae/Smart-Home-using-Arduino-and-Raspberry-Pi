@@ -11,8 +11,6 @@ The hub and each endpoint has it's each unique identifier, where the hub has the
 Each message consists of the following fields:
 - 1 Byte: Version
 - 1 Byte: Receiver
-- 1 Byte: Last Device, that handled the message
-- 1 Byte: Next Hop
 - 6 Bit: Message Type (max 64 message types)
 <a name="GF"></a>
 - 1 Bit: Group flag (GF)
@@ -21,7 +19,7 @@ Each message consists of the following fields:
 - Variable: Message Type specific fields
 - 1 Byte: Transmission ID
 - 1 Byte: Checksum
-- Total of 7 Bytes for the standard meta data
+- Total of 5 Bytes for the standard meta data
 
 ### Commands (0)
 
@@ -34,8 +32,8 @@ Additional fields:
 - 2 Byte: Message ID
 - Variabel: Parameters
 
-The total size of meta data for a command package is 11 Bytes, which leaves 21 bytes per Package as the maximum for a nRF24L01 is 32 bytes. Since there is 1 byte for package numbers, there can be a maximum of 256 packages, 
-which means the parameters can have 5 376 - 2 (Command and total packages) = 5 374 bytes at max.
+The total size of meta data for a command package is 9 Bytes, which leaves 23 bytes per Package as the maximum for a nRF24L01 is 32 bytes. Since there is 1 byte for package numbers, there can be a maximum of 256 packages, 
+which means the parameters can have 5 888 - 2 (Command and total packages) = 5 886 bytes at max.
 
 ```
 void send(byte destination, byte command, byte[] payload)
@@ -44,7 +42,10 @@ void sendToGroup(byte destination, byte command, byte[] payload)
 
 ### Register (1)
 
-Registers an endpoint to the network at startup of the endpoint. See Registration for information.
+Registers an endpoint to the network at startup of the endpoint. See Registration for information.\
+Additional fields:
+- 1 Byte: ID
+- 4 Byte: Temporary ID (timestamp, used if ID is 0)
 
 ```
 void connect(byte parent)
@@ -55,6 +56,7 @@ void connect(byte parent)
 Accepts or rejects the endpoint, that is trying to register.\
 Additional fields:
 - 1 Byte: Accept (1)/Reject (0)
+- 4 Byte: Temporary ID (used if receiver is 0)
 Only sent by the protocol.
 
 ### Ping (3)
@@ -64,6 +66,7 @@ Additional fields:
 - 1 Byte: Sender
 - 1 Byte: Ping ID
 - 1 Byte: Is Response
+- 4 Byte: Timestamp
 
 ```
 void ping(byte destination)
@@ -96,13 +99,15 @@ Additional fields:
 - 1 Byte: Error code
 - Variable: First 24 byte of original message
 
-This error message is reserved for use by the protocol. For application errors use the command message.
+This error message is reserved for use by the protocol. For application errors use the command message. All errors are logged at the hop.
 
 ## Registration
 
+A new endpoint chooses its parent itself. Since the nRF listening is limited to six devices and it has to listen to its parent, the number of children for each device is limited to five. A new endpoint sends a discover message to all possible IDs. Each device, that receives this message, responds with its ID and distance to the root if it has a slot available. The new endpoint chooses the device with the lowest distance and performs a connection quality check by sending 100 pings and measuring the RTT and the response rate. If the quality is less than a certain threshold, the device with the next highest distance is selected and tested. This is done until a device with a good connection is found.
+
 If the endpoint has been registered already or is assigned a static ID, it sends it's ID to the hub or another endpoint, which will be the new endpoint's parent. The parent sends a Route Creation message to the hub. Each hop on the way adds the new endpoint to it's routing list with all previous hops flagged invalid and adds itself to the hop list of the route creation message. The hub pings the ID of the new endpoint to check if the endpoint tries to hijack an ID.
 If the ping does not get a response, the registration is accepted and an accept message is sent. Each hop on the way validates the entry in the routing list.\
-If the endpoint is registered the first time, it sends a 0 as ID. The parent sends a Route Creation message to the hub. Each hop on the way adds the new endpoint to it's routing list with all previous hops flagged invalid and with the 0 as ID and adds itself to the hop list of the route creation message. The hub then assigns the next free ID in an accept message if there are is a free ID. Each hop on the way validates the entry and saves the correct ID in the routing list.\
+If the endpoint is registered the first time, it sends a 0 as ID and sets its temporaray ID to the current timestamp. This allows multiple registrations at the same time with a low collision probability. The parent sends a Route Creation message to the hub. Each hop on the way adds the new endpoint to it's routing list with all previous hops flagged invalid and with the temporaray ID and adds itself to the hop list of the route creation message. The hub then assigns the next free ID in an accept message if there is a free ID. Each hop on the way validates the entry and saves the correct ID in the routing list.\
 ![Diagram of an registration process example](Registration.png)
 
 ## Routing List
@@ -112,4 +117,4 @@ Each Node has a list with all children and via which children they are reachable
 
 ## Groups
 
-Endpoints can be parts of groups to benefit from group broadcasts. A group broadcast is sent with the [GF](#GF) and the [GAF](#GAF) flag set. While the GAF flag is set, all endpoints send the message to their parent. When the messages reaches the hub the GAF flag is reset and sent to all children. Each endpoint picks up the message and sends it to all own children, while the Next Hop field is set to the own ID.
+Endpoints can be parts of groups to benefit from group broadcasts. A group broadcast is sent with the [GF](#GF) and the [GAF](#GAF) flag set. While the GAF flag is set, all endpoints send the message to their parent. When the messages reaches the hub the GAF flag is reset and sent to all children. Each endpoint picks up the message and sends it to all own children.
