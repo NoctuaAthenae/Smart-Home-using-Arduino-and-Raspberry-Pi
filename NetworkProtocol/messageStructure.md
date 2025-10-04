@@ -101,6 +101,14 @@ Additional fields:
 
 This error message is reserved for use by the protocol. For application errors use the command message. All errors are logged at the hop.
 
+### Discover (7)
+
+A new device sends a discover message to find the best parent.\
+Additional fields:
+- 1 Byte: Request/Answer
+
+Only sent by the protocol.
+
 ## Registration
 
 A new endpoint chooses its parent itself. Since the nRF listening is limited to six devices and it has to listen to its parent, the number of children for each device is limited to five. A new endpoint sends a discover message to all possible IDs. Each device, that receives this message, responds with its ID and distance to the root if it has a slot available. The new endpoint chooses the device with the lowest distance and performs a connection quality check by sending 100 pings and measuring the RTT and the response rate. If the quality is less than a certain threshold, the device with the next highest distance is selected and tested. This is done until a device with a good connection is found.
