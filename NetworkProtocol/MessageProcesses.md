@@ -47,7 +47,7 @@ receive(Message message)
         processMessage(message)
     send(message)
   else:
-    if message.destination == this:
+    if message.destination == this.id or message.actionAlsoAtNotDestination:
       processMessage(message)
     else:
       send(message)
@@ -125,7 +125,7 @@ registrationMessage(Message message):
   if id == 0:
     id = message.tempId
   this.tempRouteTable.create(id, discoverChannel, invalid)
-  send(this.parent, getTypeByte(RouteCreation, NoGroup, [this.Id])
+  send(this.parent, getTypeByte(RouteCreation, NoGroup), [this.Id])
 ```
 
 ### Each hop on the way
@@ -137,8 +137,8 @@ registrationUpwards(Message message):
   id = message.id
   if id == 0:
     id = message.tempId
-  this.tempRouteTable.create(id, message.payload.last, invalid)
-  send(this.parent, getTypeByte(RouteCreation, NoGroup), message.payload.append(this.id))
+  this.tempRouteTable.create(id, message.sender, invalid)
+  send(this.parent, getTypeByte(RouteCreation, NoGroup), [this.Id])
 
 registrationDownwards(Message message):
   id = message.id
@@ -146,9 +146,10 @@ registrationDownwards(Message message):
     id = message.tempId
   send(message)
   if message.isReject:
-    this.tempRouteTable.remove(message.givenId)
+    this.tempRouteTable.remove(id)
     return
   this.routingTable.create(message.givenId, tempRouteTable.get(id), valid)
+  this.tempRouteTable.remove(id)
 ```
 
 ### Hub
@@ -178,4 +179,25 @@ accept(Message message):
   send(message.givenId, getTypeByte(AcceptReject, NoGroup), [true, message.givenId])
 reject(Message message):
   send(message.givenId, getTypeByte(AcceptReject, NoGroup), [false, message.givenId])
+```
+
+## Disconnect
+
+The hub periodically pings each device. The disconnect method is executed by all device on the routing path to the device.
+
+```
+pingEachDeviceEvery
+pingId
+numberDevices = this.routingTable.length
+sendPingAfter = pingEachDeviceEvery / numberDevices
+if time() - lastPing > sendPingAfter:
+  send(pingId, getTypeByte(Ping, NoGroup), [this.id, timestamp])
+  timer.timeout = disconnect(pingId)
+  timer.start()
+  lastPing = time()
+  pingId = (pingId + 1) mod numberDevices
+
+disconnect(byte id):
+  send(id, getTypeByte(Disconnect, NoGroup), [])
+  this.routingTable.remove(id)
 ```
