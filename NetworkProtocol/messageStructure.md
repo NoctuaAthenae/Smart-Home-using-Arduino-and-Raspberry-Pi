@@ -18,8 +18,7 @@ Each message consists of the following fields:
 - 1 Bit: Group ascending flag (GAF)
 - Variable: Message Type specific fields
 - 1 Byte: Transmission ID
-- 1 Byte: Checksum
-- Total of 5 Bytes for the standard meta data
+- Total of 4 Bytes for the standard meta data
 
 ### Commands (0)
 
@@ -32,8 +31,8 @@ Additional fields:
 - 2 Byte: Message ID
 - Variabel: Parameters
 
-The total size of meta data for a command package is 9 Bytes, which leaves 23 bytes per Package as the maximum for a nRF24L01 is 32 bytes. Since there is 1 byte for package numbers, there can be a maximum of 256 packages, 
-which means the parameters can have 5 888 - 2 (Command and total packages) = 5 886 bytes at max.
+The total size of meta data for a command package is 8 Bytes, which leaves 24 bytes per Package as the maximum for a nRF24L01 is 32 bytes. Since there is 1 byte for package numbers, there can be a maximum of 256 packages, 
+which means the parameters can have 6 144 - 2 (Command and total packages) = 6 142 bytes at max.
 
 ```
 void send(byte destination, byte command, byte[] payload)
@@ -48,7 +47,7 @@ Additional fields:
 - 4 Byte: Temporary ID (timestamp, used if ID is 0)
 
 ```
-void connect(byte parent)
+void setup(byte id)
 ```
 
 ### Accept/Reject (2)
@@ -107,8 +106,10 @@ This error message is reserved for use by the protocol. For application errors u
 A new device sends a discover message to find the best parent.\
 Additional fields:
 - 1 Byte: Request/Answer
+- 1 Byte: ID
+- 4 Byte: Temporary ID (timestamp, used if ID is 0)
 
-Only sent by the protocol.
+Only sent by the protocol during setup.
 
 ## Registration
 
