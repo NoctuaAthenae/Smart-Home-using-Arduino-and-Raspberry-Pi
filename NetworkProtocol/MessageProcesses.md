@@ -78,16 +78,31 @@ The registration registers the device at the parent, which creates the route fro
 
 ### Registration at new device
 
+Setting up a new device uses the `setup` method.
+
+```
+setup(byte id = 0)
+  payload = [id]
+  if id == 0:
+    tempId = time()
+    payload.add(tempId)
+  for i in 0,…,253:
+    send(i, getTypeByte(Discover, NoGroup), [id]) // send and listen on discovery channel 254
+  wait x seconds
+  pick parent in answered with highest level
+  register(parent, id, tempId)
+```
+
 The `register` method starts the registration at the parent with the given ID.
 
 ```
-register(byte parent)
-  this.id = tryGetIdFromMemory()
-  if this.id == null:
-    this.tempId = time()
-    this.id = 0
+register(byte parent, byte id, uint32_t tempId)
+  if id == 0:
+    tempId = tempId
+  else:
+    this.id = id
   this.parent = parent
-  send(parent, getTypeByte(Register, NoGroup), [])
+  send(parent, getTypeByte(Register, NoGroup), [id, tempId])
 ```
 
 When a response is received, the registration is finished with the following method.
@@ -96,8 +111,7 @@ When a response is received, the registration is finished with the following met
 finishRegistration(Message message):
   if message.isReject:
     return
-  if this.id == 0:
-    this.id = message.givenId
+  this.id = message.givenId
   this.registered = true
 ```
 
@@ -107,8 +121,11 @@ The parent initiates the route creation for the new device.
 
 ```
 registrationMessage(Message message):
-  this.routingTable.create(message.lastHop, message.lastHop, invalid)
-  send(this.parent, getTypeByte(RouteCreation, NoGroup, [message.lastHop])
+  id = message.id
+  if id == 0:
+    id = message.tempId
+  this.tempRouteTable.create(id, discoverChannel, invalid)
+  send(this.parent, getTypeByte(RouteCreation, NoGroup, [this.Id])
 ```
 
 ### Each hop on the way
@@ -117,17 +134,21 @@ Each hop adds the new device to its routing table.
 
 ```
 registrationUpwards(Message message):
-  this.routingTable.create(message.newDevice, message.lastHop, invalid)
+  id = message.id
+  if id == 0:
+    id = message.tempId
+  this.tempRouteTable.create(id, message.payload.last, invalid)
   send(this.parent, getTypeByte(RouteCreation, NoGroup), message.payload.append(this.id))
 
 registrationDownwards(Message message):
-  send(message.givenId, getTypeByte(AcceptReject, NoGroup), [message.isAccept, message.givenId])
+  id = message.id
+  if id == 0:
+    id = message.tempId
+  send(message)
   if message.isReject:
-    this.routingTable.remove(message.givenId)
+    this.tempRouteTable.remove(message.givenId)
     return
-  if this.routingTable.hasZero():
-    this.routingTable.replace(message.givenId)
-  this.routingTable.validate(message.givenId)
+  this.routingTable.create(message.givenId, tempRouteTable.get(id), valid)
 ```
 
 ### Hub
