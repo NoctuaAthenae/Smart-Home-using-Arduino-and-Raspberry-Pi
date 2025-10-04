@@ -79,6 +79,7 @@ Represents both ping request and response. The response is marked with the IsRes
 Collects all hops to the hub for the new endpoint and writes the new endpoint into the routing list of each hop. The 8 byte meta data limit the route length to 24 and so the tree height to 24+2=26 (hub and lowest endpoints do not need a spot in the route).\
 Additional fields:
 - 1 Byte: ID of the new endpoint
+- 4 Byte: Temporary ID (timestamp, used if ID is 0)
 - Variabel: Each Hop to the hub
 
 Only sent by the protocol.
