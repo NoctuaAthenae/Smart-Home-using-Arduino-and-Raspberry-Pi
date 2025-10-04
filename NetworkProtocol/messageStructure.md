@@ -75,11 +75,11 @@ Represents both ping request and response. The response is marked with the IsRes
 
 ### Route Creation (4)
 
-Collects all hops to the hub for the new endpoint and writes the new endpoint into the routing list of each hop. The 8 byte meta data limit the route length to 24 and so the tree height to 24+2=26 (hub and lowest endpoints do not need a spot in the route).\
+Tells the parent of a device d, that there is a new device, that can be reached via d.\
 Additional fields:
 - 1 Byte: ID of the new endpoint
 - 4 Byte: Temporary ID (timestamp, used if ID is 0)
-- Variabel: Each Hop to the hub
+- 1 Byte: Sender
 
 Only sent by the protocol.
 
@@ -111,6 +111,18 @@ Additional fields:
 
 Only sent by the protocol during setup.
 
+### Disconnected (8)
+
+If the hub pings a device, which does not answer, it sends a disconnect message down its routing path.\
+
+Only sent by the protocol.
+
+### Reconnect (9)
+
+If a device finds a better parent, it sends a reconnect message to its new parent.\
+
+Only sent by the protocol.
+
 ## Registration
 
 A new endpoint chooses its parent itself. Since the nRF listening is limited to six devices and it has to listen to its parent, the number of children for each device is limited to five. A new endpoint sends a discover message to all possible IDs. Each device, that receives this message, responds with its ID and distance to the root if it has a slot available. The new endpoint chooses the device with the lowest distance and performs a connection quality check by sending 100 pings and measuring the RTT and the response rate. If the quality is less than a certain threshold, the device with the next highest distance is selected and tested. This is done until a device with a good connection is found.
@@ -128,3 +140,11 @@ Each Node has a list with all children and via which children they are reachable
 ## Groups
 
 Endpoints can be parts of groups to benefit from group broadcasts. A group broadcast is sent with the [GF](#GF) and the [GAF](#GAF) flag set. While the GAF flag is set, all endpoints send the message to their parent. When the messages reaches the hub the GAF flag is reset and sent to all children. Each endpoint picks up the message and sends it to all own children.
+
+## Disconnects
+
+The hub pings regularly all devices. It pings one device every pingTime / numberDevices (milli)seconds, so each device is pinged every pingTime (milli)seconds. If a device does not answer, the hub sends a disconnect message down its routing path.
+
+## Reconnect
+
+Every now and then each device sends a discover message to all IDs. It benchmarks the connection to all devices, that answer, and picks the best connection. The device sends a reconnect message to its parent. Each device that gets the reconnect message, adds the path to its routing table. If the reconnected device was already in the routing table, it sends a disconnect message down the routing path, otherwise it sends the reconnect message to its parent.
