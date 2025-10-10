@@ -191,7 +191,7 @@ pingId
 numberDevices = this.routingTable.length
 sendPingAfter = pingEachDeviceEvery / numberDevices
 if time() - lastPing > sendPingAfter:
-  send(pingId, getTypeByte(Ping, NoGroup), [this.id, timestamp])
+  send(this.routingTable.keys[pingId], getTypeByte(Ping, NoGroup), [this.id, timestamp])
   timer.timeout = disconnect(pingId)
   timer.start()
   lastPing = time()
@@ -200,4 +200,34 @@ if time() - lastPing > sendPingAfter:
 disconnect(byte id):
   send(id, getTypeByte(Disconnect, NoGroup), [])
   this.routingTable.remove(id)
+```
+
+## Reconnect
+
+Each device periodically benchmarks connections to its neighbors.
+
+```
+timeout
+lastReconnectAttempt
+if time() - lastReconnectAttempt > timeout:
+  for i in 0,…,253:
+    send(i, getTypeByte(Discover, NoGroup), [id]) // send and listen on discovery channel 254
+  wait x seconds
+  for x in devicesResponded:
+    for i in 0,…,N:
+      send(x, getTypeByte(Ping, NoGroup), [time()])
+  wait x seconds
+  pick device d with best connection, with tiebreak higher level
+  send(d, getTypeByte(Reconnect, NoGroup), [])
+if recvMsg.type == reconnect:
+  this.parent = d
+```
+
+When a reconnect message is received:
+
+```
+if (msg.origin in this.routingTable):
+  send(this.routingTable[msg.origin], GetTypeByte(Disconnect, NoGroup), [])
+else:
+  send(msg)
 ```
