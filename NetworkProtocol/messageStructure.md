@@ -17,8 +17,7 @@ Each message consists of the following fields:
 <a name="GAF"></a>
 - 1 Bit: Group ascending flag (GAF)
 - Variable: Message Type specific fields
-- 1 Byte: Transmission ID
-- Total of 4 Bytes for the standard meta data
+- Total of 3 Bytes for the standard meta data
 
 ### Commands (0)
 
@@ -31,8 +30,8 @@ Additional fields:
 - 2 Byte: Message ID
 - Variabel: Parameters
 
-The total size of meta data for a command package is 8 Bytes, which leaves 24 bytes per Package as the maximum for a nRF24L01 is 32 bytes. Since there is 1 byte for package numbers, there can be a maximum of 256 packages, 
-which means the parameters can have 6 144 - 2 (Command and total packages) = 6 142 bytes at max.
+The total size of meta data for a command package is 7 Bytes, which leaves 25 bytes per Package as the maximum for a nRF24L01 is 32 bytes. Since there is 1 byte for package numbers, there can be a maximum of 256 packages,
+which means the parameters can have 6 400 - 2 (Command and total packages) = 6 398 bytes at max.
 
 ```
 void send(byte destination, byte command, byte[] payload)
@@ -79,7 +78,6 @@ Tells the parent of a device d, that there is a new device, that can be reached 
 Additional fields:
 - 1 Byte: ID of the new endpoint
 - 4 Byte: Temporary ID (timestamp, used if ID is 0)
-- 1 Byte: Sender
 
 Only sent by the protocol.
 
@@ -97,7 +95,7 @@ Can only be done at the interface of the hub, so the message is only sent by the
 Signals an error, that occurred during another message.\
 Additional fields:
 - 1 Byte: Error code
-- Variable: First 24 byte of original message
+- Variable: First 28 byte of original message
 
 This error message is reserved for use by the protocol. For application errors use the command message. All errors are logged at the hop.
 
@@ -111,14 +109,9 @@ Additional fields:
 
 Only sent by the protocol during setup.
 
-### Disconnected (8)
+### Disconnected/Reconnect (8)
 
 If the hub pings a device, which does not answer, it sends a disconnect message down its routing path.\
-
-Only sent by the protocol.
-
-### Reconnect (9)
-
 If a device finds a better parent, it sends a reconnect message to its new parent.\
 
 Only sent by the protocol.
