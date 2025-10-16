@@ -46,11 +46,6 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
 
             uint8_t *package = rawPackages.at(j);
 
-            uint8_t packageArray[32];
-            for (int k = 0; k < 32; k++) {
-                packageArray[k] = package[k];
-            }
-
             BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
             BOOST_CHECK_EQUAL(package[1], id);
             BOOST_CHECK_EQUAL(package[2] / 4, 0);
@@ -88,17 +83,20 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
             auto createdCommandMessage = CommandMessage();
             bool messageBuilt = builder.newCommandMessage(createdMsg, &createdCommandMessage);
 
+
             if (j == numberPackages[i] - 1) {
                 BOOST_CHECK(messageBuilt);
                 BOOST_CHECK_EQUAL(createdCommandMessage.command, command);
-                BOOST_CHECK_EQUAL(createdCommandMessage.content->size(), SLOT_COUNT(numberPackages[i]));
+                BOOST_CHECK_EQUAL(createdCommandMessage.content.size(), SLOT_COUNT(numberPackages[i]));
                 for (int k = 0; k < contentSizes[i]; k++) {
-                    BOOST_CHECK_EQUAL((*createdCommandMessage.content)[k], content[k]);
+                    BOOST_CHECK_EQUAL(createdCommandMessage.content.at(k), content[k]);
                 }
             } else {
                 BOOST_CHECK(!messageBuilt);
             }
         }
+
+        Message::cleanUp(&rawPackages);
     }
 }
 

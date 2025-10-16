@@ -123,6 +123,7 @@ public:
  */
 class CommandMessage : public Message {
 public:
+
     /**
      * Constructor for command messages.
      * @param receiver Receiver of this message.
@@ -130,14 +131,15 @@ public:
      * @param command Command type of the message.
      * @param messageID ID of the message.
      * @param command Command type of the message.
-     * @param content Parameters and other content of the command.
+     * @param content Parameters and other content of the command. Allocated on the heap.
      */
     explicit CommandMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t command,
         uint16_t messageID, uint8_t origin, std::vector<uint8_t>* content)
         : Message(receiver, typeAndGroups) {
 
         this->command = command;
-        this->content = content;
+        this->content = std::vector<uint8_t>(content->size());
+        memcpy(&this->content.at(0), &content->at(0), content->size());
         this->messageID = messageID;
         this->origin = origin;
     }
@@ -150,14 +152,15 @@ public:
      * @param command Command type of the message.
      * @param messageID ID of the message.
      * @param origin Device that created the message.
-     * @param content Parameters and other content of the command.
+     * @param content Parameters and other content of the command. Allocated on the heap.
      */
     explicit CommandMessage(uint8_t receiver, bool group, bool groupAscending,
         uint8_t command, uint16_t messageID, uint8_t origin, std::vector<uint8_t>* content)
         : Message(receiver, group, groupAscending) {
 
         this->command = command;
-        this->content = content;
+        this->content = std::vector<uint8_t>(content->size());
+        memcpy(&this->content.at(0), &content->at(0), content->size());
         this->messageID = messageID;
         this->origin = origin;
     }
@@ -167,7 +170,7 @@ public:
      */
     explicit CommandMessage() : Message(0, 0) {
         this->command = 0;
-        this->content = new std::vector<uint8_t>();
+        this->content = std::vector<uint8_t>();
         this->messageID = 0;
         this->origin = 0;
     }
@@ -190,7 +193,7 @@ public:
     /**
      * Parameters and other content of the message.
      */
-    std::vector<uint8_t>* content;
+    std::vector<uint8_t> content;
 
     /**
      * Converts the messages to arrays of 32 bytes.

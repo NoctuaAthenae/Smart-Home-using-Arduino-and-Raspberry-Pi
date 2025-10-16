@@ -90,7 +90,11 @@ BOOST_AUTO_TEST_CASE(CommandRawPackageTest) {
                         "Package " << j << " at slot " << k);
                 }
             }
+
+            delete createdMsg;
         }
+
+        Message::cleanUp(&rawPackages);
     }
 }
 
@@ -117,6 +121,9 @@ BOOST_AUTO_TEST_CASE(RegisterRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
     BOOST_CHECK_EQUAL(createdMsg->getType(), 1);
     BOOST_CHECK_EQUAL(createdMsg->newDeviceID, newDeviceID);
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 BOOST_AUTO_TEST_CASE(RegisterRawPackageTempIdTest) {
@@ -148,6 +155,9 @@ BOOST_AUTO_TEST_CASE(RegisterRawPackageTempIdTest) {
     BOOST_CHECK_EQUAL(createdMsg->getType(), 1);
     BOOST_CHECK_EQUAL(createdMsg->newDeviceID, 0);
     BOOST_CHECK_EQUAL(createdMsg->tempID, tempId);
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 
@@ -173,6 +183,9 @@ BOOST_AUTO_TEST_CASE(AcceptRejectRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
     BOOST_CHECK_EQUAL(createdMsg->getType(), 2);
     BOOST_CHECK(createdMsg->isAccept);
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 BOOST_AUTO_TEST_CASE(AcceptRejectTempIdRawPackageTest) {
@@ -203,6 +216,9 @@ BOOST_AUTO_TEST_CASE(AcceptRejectTempIdRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->getType(), 2);
     BOOST_CHECK_EQUAL(createdMsg->tempID, tempId);
     BOOST_CHECK(createdMsg->isAccept);
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 
@@ -240,6 +256,9 @@ BOOST_AUTO_TEST_CASE(PingRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->pingId, pingID);
     BOOST_CHECK_EQUAL(createdMsg->getType(), 3);
     BOOST_CHECK(!createdMsg->isResponse);
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 
@@ -266,6 +285,9 @@ BOOST_AUTO_TEST_CASE(RouteCreationRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
     BOOST_CHECK_EQUAL(createdMsg->newDeviceID, newDeviceID);
     BOOST_CHECK_EQUAL(createdMsg->getType(), 4);
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 BOOST_AUTO_TEST_CASE(RouteCreationTempIDRawPackageTest) {
@@ -296,6 +318,9 @@ BOOST_AUTO_TEST_CASE(RouteCreationTempIDRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->newDeviceID, 0);
     BOOST_CHECK_EQUAL(createdMsg->tempID, tempID);
     BOOST_CHECK_EQUAL(createdMsg->getType(), 4);
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 
@@ -324,6 +349,9 @@ BOOST_AUTO_TEST_CASE(AddRemoveToGroupRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->groupId, groupId);
     BOOST_CHECK_EQUAL(createdMsg->getType(), 5);
     BOOST_CHECK(createdMsg->isAddToGroup);
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 
@@ -365,6 +393,9 @@ BOOST_AUTO_TEST_CASE(ErrorRawPackageTest) {
     for (int i = 0; i < 28; ++i) {
         BOOST_CHECK_EQUAL(createdMsg->erroneousMessage[i], erroneousMessage[i]);
     }
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 BOOST_AUTO_TEST_CASE(DiscoverRawPackageTest) {
@@ -391,6 +422,9 @@ BOOST_AUTO_TEST_CASE(DiscoverRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
     BOOST_CHECK_EQUAL(createdMsg->ID, newDeviceID);
     BOOST_CHECK_EQUAL(createdMsg->getType(), 7);
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 BOOST_AUTO_TEST_CASE(DiscoverTempIDRawPackageTest) {
@@ -423,6 +457,9 @@ BOOST_AUTO_TEST_CASE(DiscoverTempIDRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->ID, 0);
     BOOST_CHECK_EQUAL(createdMsg->tempID, tempID);
     BOOST_CHECK_EQUAL(createdMsg->getType(), 7);
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 
@@ -449,6 +486,9 @@ BOOST_AUTO_TEST_CASE(ReDisconnectRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
     BOOST_CHECK_EQUAL(createdMsg->getType(), 8);
     BOOST_CHECK(createdMsg->isDisconnect);
+
+    delete createdMsg;
+    Message::cleanUp(&rawPackages);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

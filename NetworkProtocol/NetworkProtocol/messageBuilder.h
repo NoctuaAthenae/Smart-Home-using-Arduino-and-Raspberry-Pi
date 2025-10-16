@@ -15,14 +15,14 @@ private:
      * Key: (lastDevice, timestamp)
      * Value: The partial command message.
      */
-    std::map<std::pair<uint8_t, uint32_t>, std::vector<PartialCommandMessage*>> partialCommands;
+    std::map<std::pair<uint8_t, uint16_t>, std::vector<PartialCommandMessage*>> partialCommands;
 
     /**
      * Map of the number of packages of a command message.
      * Key: (lastDevice, timestamp)
      * Value: The number of packages.
      */
-    std::map<std::pair<uint8_t, uint32_t>, uint8_t> numPackages;
+    std::map<std::pair<uint8_t, uint16_t>, uint8_t> numPackages;
 
 public:
     /**

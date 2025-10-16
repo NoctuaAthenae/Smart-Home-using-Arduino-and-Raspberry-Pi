@@ -1,6 +1,9 @@
 
 #include "messageBuilder.h"
 
+#include <iostream>
+#include <ostream>
+
 bool MessageBuilder::newCommandMessage(PartialCommandMessage *message, CommandMessage *result) {
 
     // messages are identified by origin and message ID
@@ -30,43 +33,33 @@ bool MessageBuilder::newCommandMessage(PartialCommandMessage *message, CommandMe
         return false;
     }
 
-    uint8_t size = (this->numPackages.at(key) - 1) * COMMAND_SLOTS + FIRST_COMMAND_SLOTS;
+    uint8_t size = SLOT_COUNT(this->numPackages.at(key));
 
-    *result = CommandMessage(message->receiver, message->isGroup(), message->isGroupAscending(), 0, message->messageID, message->origin, new std::vector<uint8_t>(size));
+    result->receiver = message->receiver;
+    result->typeAndGroups = message->typeAndGroups;
+    result->messageID = message->messageID;
+    result->origin = message->origin;
+    result->content = std::vector<uint8_t>(size);
+
 
     // assemble the content of the message
     // iterate through packages to find the next package in order
-    for (uint8_t i = 0; i < this->numPackages.at(key); i++) {
-        PartialCommandMessage partialCommand = *partialCommands->at(i);
+    for (uint8_t i = 0; i < partialCommands->size(); i++) {
+        PartialCommandMessage *partialCommand = partialCommands->at(i);
 
         if (partialCommands->at(i)->packageNumber == 0) {
             // first package saves command and has less content
-            memcpy(&result->content->at(0), partialCommand.content + 2, FIRST_COMMAND_SLOTS);
-            //result->content->insert(result->content->end(), partialCommand.content + 2, partialCommand.content + FIRST_COMMAND_SLOTS);
-            result->command = partialCommand.content[0];
+            memcpy(&result->content.at(0), partialCommand->content + 2, FIRST_COMMAND_SLOTS);
+            result->command = partialCommand->content[0];
+        } else {
+            memcpy(&result->content.at(0) + SLOT_COUNT(i), partialCommand->content, COMMAND_SLOTS);
         }
 
-        memcpy(&result->content->at(0) + SLOT_COUNT(i), partialCommand.content, COMMAND_SLOTS);
-        //result->content->insert(result->content->end(), partialCommand.content, partialCommand.content + COMMAND_SLOTS);
-
-
-
-        // for (uint8_t j = 0; j < this->numPackages.at(key); j++) {
-        //     if (partialCommands->at(j)->packageNumber == i) {
-        //         PartialCommandMessage partialCommand = *partialCommands->at(j);
-        //
-        //         if (i == 0) {
-        //             // first package saves command and has less content
-        //             result->content->insert(result->content->end(), partialCommand.content + 2, partialCommand.content + FIRST_COMMAND_SLOTS);
-        //             result->command = (*partialCommand.content)[0];
-        //             break;
-        //         }
-        //
-        //         result->content->insert(result->content->end(), partialCommand.content, partialCommand.content + COMMAND_SLOTS);
-        //         break;
-        //     }
-        // }
+        delete partialCommand;
     }
+
+    this->partialCommands.erase(key);
+    this->numPackages.erase(key);
 
     return true;
 }
