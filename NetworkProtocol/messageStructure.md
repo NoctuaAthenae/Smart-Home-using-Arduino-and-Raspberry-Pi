@@ -9,9 +9,9 @@ The hub and each endpoint has it's each unique identifier, where the hub has the
 ## Messages
 
 Each message consists of the following fields:
-- 1 Byte: Version
-- 1 Byte: Receiver
-- 6 Bit: Message Type (max 64 message types)
+- [0] 1 Byte: Version
+- [1] 1 Byte: Receiver
+- [2] 6 Bit: Message Type (max 64 message types)
 <a name="GF"></a>
 - 1 Bit: Group flag (GF)
 <a name="GAF"></a>
@@ -23,11 +23,11 @@ Each message consists of the following fields:
 
 Commands are used for exchanging data between the network members. It can consist of a single command or a command with parameters. Commands are stored in one byte, limiting the number of possible commands to 255, while the parameters can have variable data lengths. Each command message package contains its origin and message ID, which are used to identify the message and reconstruct it.\
 Additional fields:
-- 1 Byte: Command (only for first package)
-- 1 Byte: Total packages (only for first package)
-- 1 Byte: Package number
-- 1 Byte: Origin
-- 2 Byte: Message ID
+- [3] 1 Byte: Package number
+- [4] 1 Byte: Origin
+- [5] 2 Byte: Message ID
+- [7] 1 Byte: Command (only for first package)
+- [8] 1 Byte: Total packages (only for first package)
 - Variabel: Parameters
 
 The total size of meta data for a command package is 7 Bytes, which leaves 25 bytes per Package as the maximum for a nRF24L01 is 32 bytes. Since there is 1 byte for package numbers, there can be a maximum of 256 packages,
@@ -42,8 +42,8 @@ void sendToGroup(byte destination, byte command, byte[] payload)
 
 Registers an endpoint to the network at startup of the endpoint. See Registration for information.\
 Additional fields:
-- 1 Byte: ID
-- 4 Byte: Temporary ID (timestamp, used if ID is 0)
+- [3] 1 Byte: ID
+- [4] 4 Byte: Temporary ID (timestamp, used if ID is 0)
 
 ```
 void setup(byte id)
@@ -53,18 +53,18 @@ void setup(byte id)
 
 Accepts or rejects the endpoint, that is trying to register.\
 Additional fields:
-- 1 Byte: Accept (1)/Reject (0)
-- 4 Byte: Temporary ID (used if receiver is 0)
+- [3] 1 Byte: Accept (1)/Reject (0)
+- [4] 4 Byte: Temporary ID (used if receiver is 0)
 Only sent by the protocol.
 
 ### Ping (3)
 
 Pings a device.\
 Additional fields:
-- 1 Byte: Sender
-- 1 Byte: Ping ID
-- 1 Byte: Is Response
-- 4 Byte: Timestamp
+- [3] 1 Byte: Sender
+- [4] 1 Byte: Ping ID
+- [5] 1 Byte: Is Response
+- [6] 4 Byte: Timestamp
 
 ```
 void ping(byte destination)
@@ -76,8 +76,8 @@ Represents both ping request and response. The response is marked with the IsRes
 
 Tells the parent of a device d, that there is a new device, that can be reached via d.\
 Additional fields:
-- 1 Byte: ID of the new endpoint
-- 4 Byte: Temporary ID (timestamp, used if ID is 0)
+- [3] 1 Byte: ID of the new endpoint
+- [4] 4 Byte: Temporary ID (timestamp, used if ID is 0)
 
 Only sent by the protocol.
 
@@ -85,8 +85,8 @@ Only sent by the protocol.
 
 Adds or removes an endpoint to/from a group for broadcasting to a group of specific devices.\
 Additional fields:
-- 1 Byte: Add (1)/Remove (0) 
-- 1 Byte: ID of the group
+- [3] 1 Byte: Add (1)/Remove (0) 
+- [4] 1 Byte: ID of the group
 
 Can only be done at the interface of the hub, so the message is only sent by the protocol.
 
@@ -94,8 +94,8 @@ Can only be done at the interface of the hub, so the message is only sent by the
 
 Signals an error, that occurred during another message.\
 Additional fields:
-- 1 Byte: Error code
-- Variable: First 28 byte of original message
+- [3] 1 Byte: Error code
+- [4] Variable: First 28 byte of original message
 
 This error message is reserved for use by the protocol. For application errors use the command message. All errors are logged at the hop.
 
@@ -103,9 +103,9 @@ This error message is reserved for use by the protocol. For application errors u
 
 A new device sends a discover message to find the best parent.\
 Additional fields:
-- 1 Byte: Request/Answer
-- 1 Byte: ID
-- 4 Byte: Temporary ID (timestamp, used if ID is 0)
+- [3] 1 Byte: Request/Answer
+- [4] 1 Byte: ID
+- [5] 4 Byte: Temporary ID (timestamp, used if ID is 0)
 
 Only sent by the protocol during setup.
 
@@ -113,6 +113,8 @@ Only sent by the protocol during setup.
 
 If the hub pings a device, which does not answer, it sends a disconnect message down its routing path.\
 If a device finds a better parent, it sends a reconnect message to its new parent.\
+
+- [3] 1 Byte: Reconnect/Disconnect
 
 Only sent by the protocol.
 
