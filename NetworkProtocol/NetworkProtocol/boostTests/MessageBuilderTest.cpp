@@ -1,5 +1,7 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE RawPackageTest
+#define COMMAND_SLOTS 25
+#define FIRST_COMMAND_SLOTS (COMMAND_SLOTS - 2)
 
 
 #include <boost/test/unit_test.hpp>
@@ -12,16 +14,21 @@ BOOST_AUTO_TEST_SUITE(MessageBuilderTest)
 
 BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
 
-    uint8_t contentSizes[] = {19, 20, 40, 41, 61, 62};
+    uint8_t contentSizes[] = {
+        FIRST_COMMAND_SLOTS,
+        FIRST_COMMAND_SLOTS + 1,
+        FIRST_COMMAND_SLOTS + COMMAND_SLOTS,
+        FIRST_COMMAND_SLOTS + COMMAND_SLOTS + 1,
+        FIRST_COMMAND_SLOTS + 2 * COMMAND_SLOTS,
+        FIRST_COMMAND_SLOTS + 2 * COMMAND_SLOTS + 1};
     uint8_t numberPackages[] = {1, 2, 2, 3, 3, 4};
 
     for (int i = 0; i < 6; i++) {
 
         uint8_t id = std::rand() % 256;
-        uint8_t lastDevive = std::rand() % 256;
-        uint8_t nextHop = std::rand() % 256;
         uint8_t command = std::rand() % 256;
-        uint32_t timestamp = std::rand();
+        uint8_t origin = std::rand() % 256;
+        uint16_t messageId = std::rand() % 65536;
 
         std::vector<uint8_t> content;
 
@@ -29,9 +36,7 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
             content.push_back(std::rand() % 256);
         }
 
-        CommandMessage msg = CommandMessage(id, lastDevive, nextHop , false, false, command, &content);
-
-        msg.timestamp = timestamp;
+        CommandMessage msg = CommandMessage(id, false, false, command, messageId, origin, &content);
 
         std::vector<uint8_t*> rawPackages = msg.getRawPackages();
 
@@ -50,38 +55,34 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
 
             BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
             BOOST_CHECK_EQUAL(package[1], id);
-            BOOST_CHECK_EQUAL(package[2], lastDevive);
-            BOOST_CHECK_EQUAL(package[3], nextHop);
-            BOOST_CHECK_EQUAL(package[4] / 4, 0);
-            BOOST_CHECK_EQUAL(package[10], j);
+            BOOST_CHECK_EQUAL(package[2] / 4, 0);
+            BOOST_CHECK_EQUAL(package[3], j);
+            BOOST_CHECK_EQUAL(package[4], origin);
 
-            uint32_t createdTimestamp = 0;
-            memcpy(&createdTimestamp, package + 6, sizeof(uint32_t));
+            uint16_t createdMessageId = 0;
+            memcpy(&createdMessageId, package + 5, sizeof(uint16_t));
 
-            BOOST_CHECK_EQUAL(createdTimestamp, timestamp);
+            BOOST_CHECK_EQUAL(createdMessageId, messageId);
 
-            BOOST_CHECK(Message::checkChecksum(package));
-
-            auto* createdMsg = (PartialCommandMessage*) Message::fromRawBytes(rawPackages.at(j));
+            auto* createdMsg = dynamic_cast<PartialCommandMessage *>(Message::fromRawBytes(rawPackages.at(j)));
 
             BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
             BOOST_CHECK_EQUAL(createdMsg->receiver, id);
-            BOOST_CHECK_EQUAL(createdMsg->lastDeviceId, lastDevive);
-            BOOST_CHECK_EQUAL(createdMsg->nextHop, nextHop);
+            BOOST_CHECK_EQUAL(createdMsg->origin, origin);
+            BOOST_CHECK_EQUAL(createdMsg->messageID, messageId);
             BOOST_CHECK_EQUAL(createdMsg->getType(), 0);
-            BOOST_CHECK_EQUAL(createdMsg->timestamp, timestamp);
             BOOST_CHECK_EQUAL(createdMsg->packageNumber, j);
 
             if (j == 0) {
-                BOOST_CHECK_EQUAL((*createdMsg->content)[0], numberPackages[i]);
-                BOOST_CHECK_EQUAL((*createdMsg->content)[1], command);
-                for (int k = 0; k < 19; k++) {
+                BOOST_CHECK_EQUAL((*createdMsg->content)[0], command);
+                BOOST_CHECK_EQUAL((*createdMsg->content)[1], numberPackages[i]);
+                for (int k = 0; k < FIRST_COMMAND_SLOTS; k++) {
                     BOOST_CHECK_EQUAL((*createdMsg->content)[2 + k], content[k]);
                 }
             } else {
-                int numberSlots = j == numberPackages[i] - 1 ? (contentSizes[i] - 19) % 21 : 21;
+                int numberSlots = j == numberPackages[i] - 1 ? (contentSizes[i] - FIRST_COMMAND_SLOTS) % COMMAND_SLOTS : COMMAND_SLOTS;
                 for (int k = 0; k < numberSlots; k++) {
-                    BOOST_CHECK_EQUAL((*createdMsg->content)[k], content[19 + (j - 1) * 21 + k]);
+                    BOOST_CHECK_EQUAL((*createdMsg->content)[k], content[FIRST_COMMAND_SLOTS + (j - 1) * COMMAND_SLOTS + k]);
                 }
             }
 
@@ -92,12 +93,9 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
             if (j == numberPackages[i] - 1) {
                 BOOST_CHECK(messageBuilt);
                 BOOST_CHECK_EQUAL(createdCommandMessage.command, command);
-                BOOST_CHECK_EQUAL(createdCommandMessage.content->size(), 19 + 21 * (numberPackages[i] - 1));
+                BOOST_CHECK_EQUAL(createdCommandMessage.content->size(), FIRST_COMMAND_SLOTS + COMMAND_SLOTS * (numberPackages[i] - 1));
                 for (int k = 0; k < contentSizes[i]; k++) {
                     BOOST_CHECK_EQUAL((*createdCommandMessage.content)[k], content[k]);
-                }
-                for (int k = contentSizes[i]; k < (j == 0 ? 19 : 21); k++) {
-                    BOOST_CHECK_EQUAL((*createdCommandMessage.content)[k], 0);
                 }
             } else {
                 BOOST_CHECK(!messageBuilt);

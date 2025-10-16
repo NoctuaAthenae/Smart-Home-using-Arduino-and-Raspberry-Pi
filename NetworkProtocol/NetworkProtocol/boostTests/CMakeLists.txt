@@ -1,7 +1,7 @@
 set (Boost_USE_STATIC_LIBS OFF)
-set(BOOST_ROOT /opt/boost)
 find_package (Boost REQUIRED COMPONENTS unit_test_framework)
 include_directories (${Boost_INCLUDE_DIRS})
+
 add_executable(CreateRawPackageTest CreateRawPackageTest.cpp
         ../messageBuilder.h
         ../messageBuilder.cpp)

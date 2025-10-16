@@ -3,14 +3,13 @@
 
 bool MessageBuilder::newCommandMessage(PartialCommandMessage *message, CommandMessage *result) {
 
-    //TODO identification over other fields
-
-    // messages are identified by lastDeviceId and timestamp
-    std::pair<uint8_t, uint32_t> key = std::pair<uint8_t, uint32_t>(message->lastDeviceId, message->timestamp);
+    // messages are identified by origin and message ID
+    std::pair<uint8_t, uint16_t> key = std::pair<uint8_t, uint16_t>(message->origin, message->messageID);
 
     // if no package of the message has been received yet, create a new entry
-    if (partialCommands.find(key) == partialCommands.end()) {
-        partialCommands.insert(std::pair<std::pair<uint8_t, uint32_t>, std::vector<PartialCommandMessage*>>(key, std::vector<PartialCommandMessage*>()));
+    if (this->partialCommands.find(key) == this->partialCommands.end()) {
+        this->partialCommands.insert(std::pair<std::pair<uint8_t, uint16_t>,
+            std::vector<PartialCommandMessage*>>(key, std::vector<PartialCommandMessage*>()));
     }
 
     std::vector<PartialCommandMessage*>* partialCommands = &this->partialCommands.at(key);
@@ -20,30 +19,30 @@ bool MessageBuilder::newCommandMessage(PartialCommandMessage *message, CommandMe
 
     if (message->packageNumber == 0) {
         // first package has information about the number of packages
-        numPackages.insert(std::pair<std::pair<uint8_t, uint32_t>, uint8_t>(key, (*message->content)[0]));
-    } else if (numPackages.find(key) == numPackages.end()) {
+        this->numPackages.insert(std::pair<std::pair<uint8_t, uint16_t>, uint8_t>(key, (*message->content)[1]));
+    } else if (this->numPackages.find(key) == this->numPackages.end()) {
         // first package has not arrived yet
         return false;
     }
 
     // check if all packages have arrived
-    if (partialCommands->size() != numPackages.at(key)) {
+    if (partialCommands->size() != this->numPackages.at(key)) {
         return false;
     }
 
-    *result = CommandMessage(message->receiver, message->lastDeviceId, message->nextHop, message->isGroup(), message->isGroupAscending(), 0, new std::vector<uint8_t>());
+    *result = CommandMessage(message->receiver, message->isGroup(), message->isGroupAscending(), 0, message->messageID, message->origin, new std::vector<uint8_t>());
 
     // assemble the content of the message
     // iterate through packages to find the next package in order
-    for (uint8_t i = 0; i < numPackages.at(key); i++) {
-        for (uint8_t j = 0; j < numPackages.at(key); j++) {
+    for (uint8_t i = 0; i < this->numPackages.at(key); i++) {
+        for (uint8_t j = 0; j < this->numPackages.at(key); j++) {
             if (partialCommands->at(j)->packageNumber == i) {
                 PartialCommandMessage partialCommand = *partialCommands->at(j);
 
                 if (i == 0) {
                     // first package saves command and has less content
                     result->content->insert(result->content->end(), partialCommand.content->begin() + 2, partialCommand.content->end());
-                    result->command = (*partialCommand.content)[1];
+                    result->command = (*partialCommand.content)[0];
                     break;
                 }
 
@@ -52,8 +51,6 @@ bool MessageBuilder::newCommandMessage(PartialCommandMessage *message, CommandMe
             }
         }
     }
-
-    result->timestamp = message->timestamp;
 
     return true;
 }
