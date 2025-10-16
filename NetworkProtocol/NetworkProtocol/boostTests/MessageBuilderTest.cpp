@@ -42,7 +42,9 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
 
         MessageBuilder builder;
 
-        for (int j = 0; j < numberPackages[i]; j++) {
+
+        for (int j1 = 0; j1 < numberPackages[i]; j1++) {
+            int j = numberPackages[i] > 1 && j1 < 2 ? 1 - j1 : j1;
 
             uint8_t *package = rawPackages.at(j);
 
@@ -84,7 +86,7 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
             bool messageBuilt = builder.newCommandMessage(createdMsg, &createdCommandMessage);
 
 
-            if (j == numberPackages[i] - 1) {
+            if (j1 == numberPackages[i] - 1) {
                 BOOST_CHECK(messageBuilt);
                 BOOST_CHECK_EQUAL(createdCommandMessage.command, command);
                 BOOST_CHECK_EQUAL(createdCommandMessage.content.size(), SLOT_COUNT(numberPackages[i]));

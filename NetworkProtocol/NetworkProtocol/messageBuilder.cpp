@@ -52,7 +52,7 @@ bool MessageBuilder::newCommandMessage(PartialCommandMessage *message, CommandMe
             memcpy(&result->content.at(0), partialCommand->content + 2, FIRST_COMMAND_SLOTS);
             result->command = partialCommand->content[0];
         } else {
-            memcpy(&result->content.at(0) + SLOT_COUNT(i), partialCommand->content, COMMAND_SLOTS);
+            memcpy(&result->content.at(0) + SLOT_COUNT(partialCommands->at(i)->packageNumber), partialCommand->content, COMMAND_SLOTS);
         }
 
         delete partialCommand;
