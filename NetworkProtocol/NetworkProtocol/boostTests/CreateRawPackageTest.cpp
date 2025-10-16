@@ -4,9 +4,6 @@
 #include <boost/test/unit_test.hpp>
 #include <cstdlib>
 
-#define COMMAND_SLOTS 25
-#define FIRST_COMMAND_SLOTS (COMMAND_SLOTS - 2)
-
 #include "../messageObjects.h"
 
 
@@ -57,6 +54,20 @@ BOOST_AUTO_TEST_CASE(CommandRawPackageTest) {
 
             BOOST_CHECK_EQUAL(createdMessageId, messageId);
 
+            if (j == 0) {
+                BOOST_CHECK_EQUAL(package[7], command);
+                BOOST_CHECK_EQUAL(package[8], numberPackages[i]);
+                for (int k = 0; k < FIRST_COMMAND_SLOTS; k++) {
+                    BOOST_CHECK_MESSAGE(package[9 + k] == content[k], "Package 0 at slot " << k);
+                }
+            } else {
+                int numberSlots = j == numberPackages[i] - 1 ? (contentSizes[i] - FIRST_COMMAND_SLOTS) % COMMAND_SLOTS : COMMAND_SLOTS;
+                for (int k = 0; k < numberSlots; k++) {
+                    BOOST_CHECK_MESSAGE(package[7 + k] == content[SLOT_COUNT(j) + k],
+                        "Package " << j << " at slot " << k);
+                }
+            }
+
             auto* createdMsg = dynamic_cast<PartialCommandMessage *>(Message::fromRawBytes(rawPackages.at(j)));
 
             BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
@@ -67,15 +78,15 @@ BOOST_AUTO_TEST_CASE(CommandRawPackageTest) {
             BOOST_CHECK_EQUAL(createdMsg->packageNumber, j);
 
             if (j == 0) {
-                BOOST_CHECK_EQUAL((*createdMsg->content)[0], command);
-                BOOST_CHECK_EQUAL((*createdMsg->content)[1], numberPackages[i]);
+                BOOST_CHECK_EQUAL(createdMsg->content[0], command);
+                BOOST_CHECK_EQUAL(createdMsg->content[1], numberPackages[i]);
                 for (int k = 0; k < FIRST_COMMAND_SLOTS; k++) {
-                    BOOST_CHECK_MESSAGE((*createdMsg->content)[2 + k] == content[k], "Package 0 at slot " << k);
+                    BOOST_CHECK_MESSAGE(createdMsg->content[2 + k] == content[k], "Package 0 at slot " << k);
                 }
             } else {
                 int numberSlots = j == numberPackages[i] - 1 ? (contentSizes[i] - FIRST_COMMAND_SLOTS) % COMMAND_SLOTS : COMMAND_SLOTS;
                 for (int k = 0; k < numberSlots; k++) {
-                    BOOST_CHECK_MESSAGE((*createdMsg->content)[k] == content[FIRST_COMMAND_SLOTS + (j - 1) * COMMAND_SLOTS + k],
+                    BOOST_CHECK_MESSAGE(createdMsg->content[k] == content[SLOT_COUNT(j) + k],
                         "Package " << j << " at slot " << k);
                 }
             }

@@ -4,8 +4,6 @@
 #include <cstring>
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define SET_BIT(var,pos,set) ((var) | (set<<(pos)))
-#define COMMAND_SLOTS 25
-#define FIRST_COMMAND_SLOTS (32 - COMMAND_SLOTS)
 
 bool Message::isGroup() {
     return CHECK_BIT(this->typeAndGroups, 0);
@@ -31,7 +29,7 @@ Message *Message::fromRawBytes(const uint8_t *rawPackage) {
             uint16_t id = 0;
             memcpy(&id, rawPackage + 5, 2);
             return new PartialCommandMessage(rawPackage[1], rawPackage[2], rawPackage[3], id,
-                rawPackage[4], rawPackage + FIRST_COMMAND_SLOTS);
+                rawPackage[4], rawPackage + COMMAND_METADATA_SLOTS);
         }
         case 1: {
             uint8_t newDeviceId = rawPackage[3];
@@ -124,9 +122,9 @@ std::vector<uint8_t*> CommandMessage::getRawPackages() {
     uint8_t* templatePackage = rawPackages.at(0);
 
     // the last package is not completely filled
-    // remove 24 for first package and 25 for all other packages beside the last
+    // remove 23 for first package and 25 for all other packages beside the last
     uint8_t lastPackageSize = this->content->size() -
-        (numberPackages == 1 ? 0 : (COMMAND_SLOTS - 2 + (numberPackages - 2) * COMMAND_SLOTS));
+        (numberPackages == 1 ? 0 : SLOT_COUNT(numberPackages - 1) - 2);
 
     for (uint8_t i = 0; i < numberPackages; i++) {
         // first package saves total number of packages number of package and command
@@ -136,20 +134,20 @@ std::vector<uint8_t*> CommandMessage::getRawPackages() {
             memcpy(rawPackages.at(0) + 5, &this->messageID, 2);
             rawPackages.at(0)[7] = this->command;
             rawPackages.at(0)[8] = numberPackages;
-            memcpy(rawPackages.at(0) + FIRST_COMMAND_SLOTS + 2, &this->content->at(0),
-                i == numberPackages - 1 ? lastPackageSize : COMMAND_SLOTS - 2);
+            memcpy(rawPackages.at(0) + 9, &this->content->at(0),
+                i == numberPackages - 1 ? lastPackageSize : (COMMAND_SLOTS - 2));
             continue;
         }
 
         // create a new raw package, copy the metadata from the template and set the package number
         auto *package = new uint8_t[32];
-        memcpy(package, templatePackage, FIRST_COMMAND_SLOTS);
+        memcpy(package, templatePackage, COMMAND_METADATA_SLOTS);
         package[3] = i;
         package[4] = this->origin;
         memcpy(package + 5, &this->messageID, 2);
 
         // copy the corresponding content into the slots
-        memcpy(package + FIRST_COMMAND_SLOTS, &this->content->at(COMMAND_SLOTS - 2 + COMMAND_SLOTS * (i - 1)),
+        memcpy(package + COMMAND_METADATA_SLOTS, &this->content->at(SLOT_COUNT(i)),
             i == numberPackages - 1 ? lastPackageSize : COMMAND_SLOTS);
 
         rawPackages.push_back(package);

@@ -2,12 +2,15 @@
 #define NETWORKPROTOCOL_MESSAGEOBJECTS_H
 #include <chrono>
 #include <cstdint>
+#include <cstring>
 #include <vector>
 #include <functional>
 
 #define NETWORKPROTOCOL_VERSION 0
-#define COMMAND_SLOTS 25
+#define COMMAND_METADATA_SLOTS 7
+#define COMMAND_SLOTS (32 - COMMAND_METADATA_SLOTS)
 #define FIRST_COMMAND_SLOTS (COMMAND_SLOTS - 2)
+#define SLOT_COUNT(i) (FIRST_COMMAND_SLOTS + COMMAND_SLOTS * (i - 1))
 
 /**
  * Base class for all messages.
@@ -223,12 +226,9 @@ public:
         : Message(receiver, typeAndGroups) {
 
         this->packageNumber = packageNumber;
-        this->content = new std::vector<uint8_t>();
-        for (uint8_t i = 0; i < COMMAND_SLOTS; i++) {
-            this->content->push_back(*(content + i));
-        }
         this->messageID = messageID;
         this->origin = origin;
+        memcpy(this->content, content, COMMAND_SLOTS);
     }
 
     /**
@@ -246,12 +246,9 @@ public:
         : Message(receiver, group, groupAscending) {
 
         this->packageNumber = packageNumber;
-        this->content = new std::vector<uint8_t>();
-        for (uint8_t i = 0; i < COMMAND_SLOTS; i++) {
-            this->content->push_back(*(content + i));
-        }
         this->messageID = messageID;
         this->origin = origin;
+        memcpy(this->content, content, COMMAND_SLOTS);
     }
 
     /**
@@ -272,7 +269,7 @@ public:
     /**
      * Parameters and other content of this part of the message.
      */
-    std::vector<uint8_t>* content;
+    uint8_t content[COMMAND_SLOTS];
 
     /**
      * Converts the messages to arrays of 32 bytes.
