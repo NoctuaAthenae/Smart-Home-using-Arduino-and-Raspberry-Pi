@@ -39,8 +39,8 @@ bool MessageBuilder::newCommandMessage(PartialCommandMessage *message, CommandMe
     result->typeAndGroups = message->typeAndGroups;
     result->messageID = message->messageID;
     result->origin = message->origin;
-    result->content = std::vector<uint8_t>(size);
-
+    result->content = new uint8_t[size];
+    result->contentSize = size;
 
     // assemble the content of the message
     // iterate through packages to find the next package in order
@@ -49,10 +49,10 @@ bool MessageBuilder::newCommandMessage(PartialCommandMessage *message, CommandMe
 
         if (partialCommands->at(i)->packageNumber == 0) {
             // first package saves command and has less content
-            memcpy(&result->content.at(0), partialCommand->content + 2, FIRST_COMMAND_SLOTS);
+            memcpy(result->content, partialCommand->content + 2, FIRST_COMMAND_SLOTS);
             result->command = partialCommand->content[0];
         } else {
-            memcpy(&result->content.at(0) + SLOT_COUNT(partialCommands->at(i)->packageNumber), partialCommand->content, COMMAND_SLOTS);
+            memcpy(result->content + SLOT_COUNT(partialCommands->at(i)->packageNumber), partialCommand->content, COMMAND_SLOTS);
         }
 
         delete partialCommand;

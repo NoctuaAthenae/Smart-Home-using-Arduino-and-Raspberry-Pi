@@ -27,13 +27,13 @@ BOOST_AUTO_TEST_CASE(CommandRawPackageTest) {
         uint8_t origin = std::rand() % 256;
         uint16_t messageId = std::rand() % 65536;
 
-        std::vector<uint8_t> content;
+        uint8_t *content = new uint8_t[contentSizes[i]];
 
         for (int j = 0; j < contentSizes[i]; j++) {
-            content.push_back(std::rand() % 256);
+            content[i] = std::rand() % 256;
         }
 
-        CommandMessage msg = CommandMessage(id, false, false, command, messageId, origin, &content);
+        CommandMessage msg = CommandMessage(id, false, false, command, messageId, origin, content, contentSizes[i]);
 
         std::vector<uint8_t*> rawPackages = msg.getRawPackages();
 

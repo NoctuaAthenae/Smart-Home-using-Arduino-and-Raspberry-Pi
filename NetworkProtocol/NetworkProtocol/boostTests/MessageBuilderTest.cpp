@@ -28,13 +28,13 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
         uint8_t origin = std::rand() % 256;
         uint16_t messageId = std::rand() % 65536;
 
-        std::vector<uint8_t> content;
+        uint8_t *content = new uint8_t[contentSizes[i]];
 
         for (int j = 0; j < contentSizes[i]; j++) {
-            content.push_back(std::rand() % 256);
+            content[i] = std::rand() % 256;
         }
 
-        CommandMessage msg = CommandMessage(id, false, false, command, messageId, origin, &content);
+        CommandMessage msg = CommandMessage(id, false, false, command, messageId, origin, content, contentSizes[i]);
 
         std::vector<uint8_t*> rawPackages = msg.getRawPackages();
 
@@ -89,9 +89,9 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
             if (j1 == numberPackages[i] - 1) {
                 BOOST_CHECK(messageBuilt);
                 BOOST_CHECK_EQUAL(createdCommandMessage.command, command);
-                BOOST_CHECK_EQUAL(createdCommandMessage.content.size(), SLOT_COUNT(numberPackages[i]));
+                BOOST_CHECK_EQUAL(createdCommandMessage.contentSize, SLOT_COUNT(numberPackages[i]));
                 for (int k = 0; k < contentSizes[i]; k++) {
-                    BOOST_CHECK_EQUAL(createdCommandMessage.content.at(k), content[k]);
+                    BOOST_CHECK_EQUAL(createdCommandMessage.content[k], content[k]);
                 }
             } else {
                 BOOST_CHECK(!messageBuilt);

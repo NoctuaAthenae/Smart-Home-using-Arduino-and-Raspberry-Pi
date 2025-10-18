@@ -123,6 +123,9 @@ public:
  */
 class CommandMessage : public Message {
 public:
+    ~CommandMessage() {
+        delete[] content;
+    };
 
     /**
      * Constructor for command messages.
@@ -132,17 +135,13 @@ public:
      * @param messageID ID of the message.
      * @param command Command type of the message.
      * @param content Parameters and other content of the command. Allocated on the heap.
+     * Is deleted when this message is deleted.
+     * @param contentSize Size of the content.
      */
     explicit CommandMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t command,
-        uint16_t messageID, uint8_t origin, std::vector<uint8_t>* content)
-        : Message(receiver, typeAndGroups) {
-
-        this->command = command;
-        this->content = std::vector<uint8_t>(content->size());
-        memcpy(&this->content.at(0), &content->at(0), content->size());
-        this->messageID = messageID;
-        this->origin = origin;
-    }
+        uint16_t messageID, uint8_t origin, uint8_t* content, uint16_t contentSize)
+        : Message(receiver, typeAndGroups),
+            command(command), messageID(messageID), origin(origin), content(content), contentSize(contentSize) {}
 
     /**
      * Constructor for command messages.
@@ -153,27 +152,19 @@ public:
      * @param messageID ID of the message.
      * @param origin Device that created the message.
      * @param content Parameters and other content of the command. Allocated on the heap.
+     * Is deleted when this message is deleted.
+     * @param contentSize Size of the content.
      */
     explicit CommandMessage(uint8_t receiver, bool group, bool groupAscending,
-        uint8_t command, uint16_t messageID, uint8_t origin, std::vector<uint8_t>* content)
-        : Message(receiver, group, groupAscending) {
-
-        this->command = command;
-        this->content = std::vector<uint8_t>(content->size());
-        memcpy(&this->content.at(0), &content->at(0), content->size());
-        this->messageID = messageID;
-        this->origin = origin;
-    }
+        uint8_t command, uint16_t messageID, uint8_t origin, uint8_t* content, uint16_t contentSize)
+        : Message(receiver, group, groupAscending),
+        command(command), messageID(messageID), origin(origin), content(content), contentSize(contentSize) {}
 
     /**
      * Constructor for dummy command messages.
      */
-    explicit CommandMessage() : Message(0, 0) {
-        this->command = 0;
-        this->content = std::vector<uint8_t>();
-        this->messageID = 0;
-        this->origin = 0;
-    }
+    explicit CommandMessage() : Message(0, 0),
+        messageID(0), command(0), origin(0), content(nullptr), contentSize(0) {}
 
     /**
      * ID of the message.
@@ -193,7 +184,12 @@ public:
     /**
      * Parameters and other content of the message.
      */
-    std::vector<uint8_t> content;
+    uint8_t* content;
+
+    /**
+     * Size of this message's content.
+     */
+    uint16_t contentSize;
 
     /**
      * Converts the messages to arrays of 32 bytes.
