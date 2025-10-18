@@ -87,9 +87,7 @@ Message *Message::fromRawBytes(const uint8_t *rawPackage) {
     return nullptr;
 }
 
-
-
-std::vector<uint8_t*> Message::getRawPackages() {
+uint8_t Message::getRawPackages(uint8_t** data) {
     auto *rawPackage = new uint8_t[32] {
         this->version,
         this->receiver,
@@ -99,27 +97,35 @@ std::vector<uint8_t*> Message::getRawPackages() {
     // if smaller than 4, type is not set yet
     if (this->typeAndGroups < 4) rawPackage[2] += this->getType() << 2;
 
-    return {rawPackage};
+    *data = rawPackage;
+
+    return 1;
 }
 
-void Message::cleanUp(const std::vector<uint8_t *>* packages) {
-    for (auto & package : *packages) {
-        delete[] package;
-    }
+void Message::cleanUp(const uint8_t* packages) {
+    delete[] packages;
 }
 
 
-std::vector<uint8_t*> CommandMessage::getRawPackages() {
-
-    // set up the metadata of the message using the base function
-    std::vector<uint8_t*> rawPackages = Message::getRawPackages();
+uint8_t CommandMessage::getRawPackages(uint8_t** data) {
 
     // first package has 23 slots, all others 25
     // if 24 slots are used: (24 + 1) / 25 + 1 = 25 / 25 + 1 = 2
     uint8_t numberPackages = (this->contentSize + 1) / COMMAND_SLOTS + 1;
 
+    // set up the metadata of the message using the base function
     // use the created package as a template
-    uint8_t* templatePackage = rawPackages.at(0);
+    uint8_t *templatePackageAddress[1];
+    Message::getRawPackages(templatePackageAddress);
+    uint8_t* templatePackage = *templatePackageAddress;
+
+    // set meta data that does not differ between the packages
+    templatePackage[4] = this->origin;
+    memcpy(templatePackage + 5, &this->messageID, 2);
+
+    // raw packages for the data returned
+    auto* rawPackages = new uint8_t[numberPackages * 32];
+    *data = rawPackages;
 
     // the last package is not completely filled
     // remove 23 for first package and 25 for all other packages beside the last
@@ -127,89 +133,86 @@ std::vector<uint8_t*> CommandMessage::getRawPackages() {
         (numberPackages == 1 ? 0 : SLOT_COUNT(numberPackages - 1) - 2);
 
     for (uint8_t i = 0; i < numberPackages; i++) {
-        // first package saves total number of packages number of package and command
-        if (i == 0) {
-            rawPackages.at(0)[3] = i;
-            rawPackages.at(0)[4] = this->origin;
-            memcpy(rawPackages.at(0) + 5, &this->messageID, 2);
-            rawPackages.at(0)[7] = this->command;
-            rawPackages.at(0)[8] = numberPackages;
-            memcpy(rawPackages.at(0) + 9, this->content,
-                i == numberPackages - 1 ? lastPackageSize : (COMMAND_SLOTS - 2));
-            continue;
-        }
-
         // create a new raw package, copy the metadata from the template and set the package number
-        auto *package = new uint8_t[32];
+        auto *package = rawPackages + i * 32;
         memcpy(package, templatePackage, COMMAND_METADATA_SLOTS);
         package[3] = i;
-        package[4] = this->origin;
-        memcpy(package + 5, &this->messageID, 2);
+
+        uint8_t extraMetaDataSize = 0;
+        uint8_t startingIndex = SLOT_COUNT(i);
+
+        // first package saves total number of packages and command
+        if (i == 0) {
+            rawPackages[7] = this->command;
+            rawPackages[8] = numberPackages;
+            extraMetaDataSize = 2;
+            startingIndex = 0;
+        }
 
         // copy the corresponding content into the slots
-        memcpy(package + COMMAND_METADATA_SLOTS, this->content + SLOT_COUNT(i),
-            i == numberPackages - 1 ? lastPackageSize : COMMAND_SLOTS);
-
-        rawPackages.push_back(package);
+        memcpy(package + COMMAND_METADATA_SLOTS + extraMetaDataSize, this->content + startingIndex,
+            i == numberPackages - 1 ? lastPackageSize : COMMAND_SLOTS - extraMetaDataSize);
     }
 
-    return rawPackages;
+    cleanUp(templatePackage);
+
+    return numberPackages;
 }
 
-std::vector<uint8_t*> RegisterMessage::getRawPackages() {
-    std::vector<uint8_t*> rawPackages = Message::getRawPackages();
-    rawPackages.at(0)[3] = this->newDeviceID;
-    memcpy(rawPackages.at(0) + 4, &this->tempID, 4);
-    return rawPackages;
+uint8_t RegisterMessage::getRawPackages(uint8_t** data) {
+    Message::getRawPackages(data);
+    (*data)[3] = this->newDeviceID;
+    memcpy((*data) + 4, &this->tempID, 4);
+    return 1;
 }
 
-std::vector<uint8_t*> AcceptRejectMessage::getRawPackages() {
-    std::vector<uint8_t*> rawPackages = Message::getRawPackages();
-    rawPackages.at(0)[3] = this->isAccept;
-    memcpy(rawPackages.at(0) + 4, &this->tempID, 4);
-    return rawPackages;
+uint8_t AcceptRejectMessage::getRawPackages(uint8_t** data) {
+    Message::getRawPackages(data);
+    (*data)[3] = this->isAccept;
+    memcpy((*data) + 4, &this->tempID, 4);
+    return 1;
 }
 
-std::vector<uint8_t*> PingMessage::getRawPackages() {
-    std::vector<uint8_t*> rawPackages = Message::getRawPackages();
-    rawPackages.at(0)[3] = this->senderId;
-    rawPackages.at(0)[4] = this->pingId;
-    rawPackages.at(0)[5] = this->isResponse;
-    memcpy(rawPackages.at(0) + 6, &this->timestamp, 4);
-    return rawPackages;
+uint8_t PingMessage::getRawPackages(uint8_t** data) {
+    Message::getRawPackages(data);
+    (*data)[3] = this->senderId;
+    (*data)[4] = this->pingId;
+    (*data)[5] = this->isResponse;
+    memcpy((*data) + 6, &this->timestamp, 4);
+    return 1;
 }
 
-std::vector<uint8_t*> RouteCreationMessage::getRawPackages() {
-    std::vector<uint8_t*> rawPackages = Message::getRawPackages();
-    rawPackages.at(0)[3] = this->newDeviceID;
-    memcpy(rawPackages.at(0) + 4, &this->tempID, 4);
-    return rawPackages;
+uint8_t RouteCreationMessage::getRawPackages(uint8_t** data) {
+    Message::getRawPackages(data);
+    (*data)[3] = this->newDeviceID;
+    memcpy((*data) + 4, &this->tempID, 4);
+    return 1;
 }
 
-std::vector<uint8_t*> AddRemoveToGroupMessage::getRawPackages() {
-    std::vector<uint8_t*> rawPackages = Message::getRawPackages();
-    rawPackages.at(0)[3] = this->isAddToGroup;
-    rawPackages.at(0)[4] = this->groupId;
-    return rawPackages;
+uint8_t AddRemoveToGroupMessage::getRawPackages(uint8_t** data) {
+    Message::getRawPackages(data);
+    (*data)[3] = this->isAddToGroup;
+    (*data)[4] = this->groupId;
+    return 1;
 }
 
-std::vector<uint8_t*> ErrorMessage::getRawPackages() {
-    std::vector<uint8_t*> rawPackages = Message::getRawPackages();
-    rawPackages.at(0)[3] = this->errorCode;
-    memcpy(rawPackages.at(0) + 4, this->erroneousMessage, 28);
-    return rawPackages;
+uint8_t ErrorMessage::getRawPackages(uint8_t** data) {
+    Message::getRawPackages(data);
+    (*data)[3] = this->errorCode;
+    memcpy((*data) + 4, this->erroneousMessage, 28);
+    return 1;
 }
 
-std::vector<uint8_t*> DiscoverMessage::getRawPackages() {
-    std::vector<uint8_t*> rawPackages = Message::getRawPackages();
-    rawPackages.at(0)[3] = this->isRequest;
-    rawPackages.at(0)[4] = this->ID;
-    memcpy(rawPackages.at(0) + 5, &this->tempID, 4);
-    return rawPackages;
+uint8_t DiscoverMessage::getRawPackages(uint8_t** data) {
+    Message::getRawPackages(data);
+    (*data)[3] = this->isRequest;
+    (*data)[4] = this->ID;
+    memcpy((*data) + 5, &this->tempID, 4);
+    return 1;
 }
 
-std::vector<uint8_t*> ReDisconnectMessage::getRawPackages() {
-    std::vector<uint8_t*> rawPackages = Message::getRawPackages();
-    rawPackages.at(0)[3] = this->isDisconnect;
-    return rawPackages;
+uint8_t ReDisconnectMessage::getRawPackages(uint8_t** data) {
+    Message::getRawPackages(data);
+    (*data)[3] = this->isDisconnect;
+    return 1;
 }

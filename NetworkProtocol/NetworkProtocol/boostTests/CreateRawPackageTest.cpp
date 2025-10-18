@@ -35,13 +35,15 @@ BOOST_AUTO_TEST_CASE(CommandRawPackageTest) {
 
         CommandMessage msg = CommandMessage(id, false, false, command, messageId, origin, content, contentSizes[i]);
 
-        std::vector<uint8_t*> rawPackages = msg.getRawPackages();
+        uint8_t *dataAddress[1];
+        uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+        uint8_t *rawPackages = *dataAddress;
 
-        BOOST_CHECK_EQUAL(rawPackages.size(), numberPackages[i]);
+        BOOST_CHECK_EQUAL(gotNumberPackages, numberPackages[i]);
 
         for (int j = 0; j < numberPackages[i]; j++) {
 
-            uint8_t *package = rawPackages.at(j);
+            uint8_t *package = rawPackages + j * 32;
 
             BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
             BOOST_CHECK_EQUAL(package[1], id);
@@ -68,7 +70,7 @@ BOOST_AUTO_TEST_CASE(CommandRawPackageTest) {
                 }
             }
 
-            auto* createdMsg = dynamic_cast<PartialCommandMessage *>(Message::fromRawBytes(rawPackages.at(j)));
+            auto* createdMsg = dynamic_cast<PartialCommandMessage *>(Message::fromRawBytes(rawPackages + j * 32));
 
             BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
             BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -94,7 +96,7 @@ BOOST_AUTO_TEST_CASE(CommandRawPackageTest) {
             delete createdMsg;
         }
 
-        Message::cleanUp(&rawPackages);
+        Message::cleanUp(rawPackages);
     }
 }
 
@@ -104,18 +106,20 @@ BOOST_AUTO_TEST_CASE(RegisterRawPackageTest) {
     uint8_t newDeviceID = std::rand() % 256;
     RegisterMessage msg = RegisterMessage(id, false, false, newDeviceID);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
     BOOST_CHECK_EQUAL(package[2] / 4, 1);
     BOOST_CHECK_EQUAL(package[3], newDeviceID);
 
-    auto* createdMsg = dynamic_cast<RegisterMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<RegisterMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -123,7 +127,7 @@ BOOST_AUTO_TEST_CASE(RegisterRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->newDeviceID, newDeviceID);
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 BOOST_AUTO_TEST_CASE(RegisterRawPackageTempIdTest) {
@@ -131,11 +135,13 @@ BOOST_AUTO_TEST_CASE(RegisterRawPackageTempIdTest) {
     uint32_t tempId = std::rand();
     RegisterMessage msg = RegisterMessage(id, false, false, tempId);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
@@ -148,7 +154,7 @@ BOOST_AUTO_TEST_CASE(RegisterRawPackageTempIdTest) {
     BOOST_CHECK_EQUAL(createdId, tempId);
 
 
-    auto* createdMsg = dynamic_cast<RegisterMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<RegisterMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -157,7 +163,7 @@ BOOST_AUTO_TEST_CASE(RegisterRawPackageTempIdTest) {
     BOOST_CHECK_EQUAL(createdMsg->tempID, tempId);
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 
@@ -165,11 +171,13 @@ BOOST_AUTO_TEST_CASE(AcceptRejectRawPackageTest) {
     uint8_t id = std::rand() % 256;
     AcceptRejectMessage msg = AcceptRejectMessage(id, false, false, true);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
@@ -177,7 +185,7 @@ BOOST_AUTO_TEST_CASE(AcceptRejectRawPackageTest) {
     BOOST_CHECK(package[3]);
 
 
-    auto* createdMsg = dynamic_cast<AcceptRejectMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<AcceptRejectMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -185,18 +193,20 @@ BOOST_AUTO_TEST_CASE(AcceptRejectRawPackageTest) {
     BOOST_CHECK(createdMsg->isAccept);
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 BOOST_AUTO_TEST_CASE(AcceptRejectTempIdRawPackageTest) {
     uint32_t tempId = std::rand();
     AcceptRejectMessage msg = AcceptRejectMessage(0, false, false, true, tempId);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], 0);
@@ -209,7 +219,7 @@ BOOST_AUTO_TEST_CASE(AcceptRejectTempIdRawPackageTest) {
     BOOST_CHECK_EQUAL(createdId, tempId);
 
 
-    auto* createdMsg = dynamic_cast<AcceptRejectMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<AcceptRejectMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, 0);
@@ -218,7 +228,7 @@ BOOST_AUTO_TEST_CASE(AcceptRejectTempIdRawPackageTest) {
     BOOST_CHECK(createdMsg->isAccept);
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 
@@ -229,11 +239,13 @@ BOOST_AUTO_TEST_CASE(PingRawPackageTest) {
     uint32_t timestamp = std::rand();
     PingMessage msg = PingMessage(id, false, false, pingID, senderID, false, timestamp);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
@@ -248,7 +260,7 @@ BOOST_AUTO_TEST_CASE(PingRawPackageTest) {
     BOOST_CHECK_EQUAL(createdTimestamp, timestamp);
 
 
-    auto* createdMsg = dynamic_cast<PingMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<PingMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -258,7 +270,7 @@ BOOST_AUTO_TEST_CASE(PingRawPackageTest) {
     BOOST_CHECK(!createdMsg->isResponse);
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 
@@ -267,11 +279,13 @@ BOOST_AUTO_TEST_CASE(RouteCreationRawPackageTest) {
     uint8_t newDeviceID = std::rand() % 256;
     RouteCreationMessage msg = RouteCreationMessage(id, false, false, newDeviceID);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
@@ -279,7 +293,7 @@ BOOST_AUTO_TEST_CASE(RouteCreationRawPackageTest) {
     BOOST_CHECK_EQUAL(package[3], newDeviceID);
 
 
-    auto* createdMsg = dynamic_cast<RouteCreationMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<RouteCreationMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -287,18 +301,20 @@ BOOST_AUTO_TEST_CASE(RouteCreationRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->getType(), 4);
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 BOOST_AUTO_TEST_CASE(RouteCreationTempIDRawPackageTest) {
     uint32_t tempID = std::rand();
     RouteCreationMessage msg = RouteCreationMessage(0, false, false, tempID);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], 0);
@@ -311,7 +327,7 @@ BOOST_AUTO_TEST_CASE(RouteCreationTempIDRawPackageTest) {
     BOOST_CHECK_EQUAL(createdID, tempID);
 
 
-    auto* createdMsg = dynamic_cast<RouteCreationMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<RouteCreationMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, 0);
@@ -320,7 +336,7 @@ BOOST_AUTO_TEST_CASE(RouteCreationTempIDRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->getType(), 4);
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 
@@ -329,11 +345,13 @@ BOOST_AUTO_TEST_CASE(AddRemoveToGroupRawPackageTest) {
     uint8_t groupId = std::rand() % 256;
     AddRemoveToGroupMessage msg = AddRemoveToGroupMessage(id, false, groupId, true);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
@@ -342,7 +360,7 @@ BOOST_AUTO_TEST_CASE(AddRemoveToGroupRawPackageTest) {
     BOOST_CHECK_EQUAL(package[4], groupId);
 
 
-    auto* createdMsg = dynamic_cast<AddRemoveToGroupMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<AddRemoveToGroupMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -351,7 +369,7 @@ BOOST_AUTO_TEST_CASE(AddRemoveToGroupRawPackageTest) {
     BOOST_CHECK(createdMsg->isAddToGroup);
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 
@@ -367,11 +385,13 @@ BOOST_AUTO_TEST_CASE(ErrorRawPackageTest) {
 
     ErrorMessage msg = ErrorMessage(id, false, false, errorCode, erroneousMessage);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
@@ -383,7 +403,7 @@ BOOST_AUTO_TEST_CASE(ErrorRawPackageTest) {
     }
 
 
-    auto* createdMsg = dynamic_cast<ErrorMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<ErrorMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -395,7 +415,7 @@ BOOST_AUTO_TEST_CASE(ErrorRawPackageTest) {
     }
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 BOOST_AUTO_TEST_CASE(DiscoverRawPackageTest) {
@@ -403,11 +423,13 @@ BOOST_AUTO_TEST_CASE(DiscoverRawPackageTest) {
     uint8_t newDeviceID = std::rand() % 256;
     DiscoverMessage msg = DiscoverMessage(id, false, false, newDeviceID);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
@@ -416,7 +438,7 @@ BOOST_AUTO_TEST_CASE(DiscoverRawPackageTest) {
     BOOST_CHECK_EQUAL(package[4], newDeviceID);
 
 
-    auto* createdMsg = dynamic_cast<DiscoverMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<DiscoverMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -424,7 +446,7 @@ BOOST_AUTO_TEST_CASE(DiscoverRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->getType(), 7);
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 BOOST_AUTO_TEST_CASE(DiscoverTempIDRawPackageTest) {
@@ -432,11 +454,13 @@ BOOST_AUTO_TEST_CASE(DiscoverTempIDRawPackageTest) {
     uint32_t tempID = std::rand();
     DiscoverMessage msg = DiscoverMessage(id, false, false, tempID);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
@@ -450,7 +474,7 @@ BOOST_AUTO_TEST_CASE(DiscoverTempIDRawPackageTest) {
     BOOST_CHECK_EQUAL(createdID, tempID);
 
 
-    auto* createdMsg = dynamic_cast<DiscoverMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<DiscoverMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -459,7 +483,7 @@ BOOST_AUTO_TEST_CASE(DiscoverTempIDRawPackageTest) {
     BOOST_CHECK_EQUAL(createdMsg->getType(), 7);
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 
@@ -468,11 +492,13 @@ BOOST_AUTO_TEST_CASE(ReDisconnectRawPackageTest) {
     uint8_t groupId = std::rand() % 256;
     ReDisconnectMessage msg = ReDisconnectMessage(id, false, groupId, true);
 
-    std::vector<uint8_t *> rawPackages = msg.getRawPackages();
+    uint8_t *dataAddress[1];
+    uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+    uint8_t *rawPackages = *dataAddress;
 
-    BOOST_CHECK_EQUAL(rawPackages.size(), 1);
+    BOOST_CHECK_EQUAL(gotNumberPackages, 1);
 
-    uint8_t *package = rawPackages.at(0);
+    uint8_t *package = rawPackages;
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
@@ -480,7 +506,7 @@ BOOST_AUTO_TEST_CASE(ReDisconnectRawPackageTest) {
     BOOST_CHECK(package[3]);
 
 
-    auto* createdMsg = dynamic_cast<ReDisconnectMessage *>(Message::fromRawBytes(rawPackages.at(0)));
+    auto* createdMsg = dynamic_cast<ReDisconnectMessage *>(Message::fromRawBytes(rawPackages));
 
     BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -488,7 +514,7 @@ BOOST_AUTO_TEST_CASE(ReDisconnectRawPackageTest) {
     BOOST_CHECK(createdMsg->isDisconnect);
 
     delete createdMsg;
-    Message::cleanUp(&rawPackages);
+    Message::cleanUp(rawPackages);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

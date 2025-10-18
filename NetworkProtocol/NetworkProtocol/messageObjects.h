@@ -78,18 +78,20 @@ public:
 
     /**
      * Converts the messages to arrays of 32 bytes.
-     * For messages larger than 32 bytes, the message is split and each message is added to the returned vector.
+     * For messages larger than 32 bytes, the message is split and each message is added to the data array.
      * Since only command messages can be larger than 32 bytes,
      * all other message types return a vector with only one entry.
-     * @return Vector with all messages.
+     * @param data Pointer to an array of the data allocated in a row. Data is allocated on the heap.
+     * Free with the cleanUp method.
+     * @return Number of raw packages.
      */
-    virtual std::vector<uint8_t*> getRawPackages();
+    virtual uint8_t getRawPackages(uint8_t** data);
 
     /**
      * Frees the memory of all raw packages of this message.
      * @param packages Address of the vector with all raw packages of this message.
      */
-    static void cleanUp(const std::vector<uint8_t*>* packages);
+    static void cleanUp(const uint8_t* packages);
 
     /**
      * Base constructor for a received Message.
@@ -193,10 +195,11 @@ public:
 
     /**
      * Converts the messages to arrays of 32 bytes.
-     * For messages larger than 32 bytes, the message is split and each message is added to the returned vector.
-     * @return Vector with all messages.
+     * For messages larger than 32 bytes, the message is split and each message is added to the data array.
+     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
+     * @return Number of raw packages.
      */
-    std::vector<uint8_t*> getRawPackages() override;
+    uint8_t getRawPackages(uint8_t** data) override;
 
     /**
      * @return Type of this message.
@@ -270,12 +273,14 @@ public:
      */
     uint8_t content[COMMAND_SLOTS];
 
+
     /**
      * Converts the messages to arrays of 32 bytes.
-     * For messages larger than 32 bytes, the message is split and each message is added to the returned vector.
-     * @return Vector with all messages.
+     * For messages larger than 32 bytes, the message is split and each message is added to the data array.
+     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
+     * @return Number of raw packages.
      */
-    std::vector<uint8_t*> getRawPackages() override {
+    uint8_t getRawPackages(uint8_t** data) override {
         throw std::bad_function_call();
     };
 
@@ -363,9 +368,10 @@ public:
 
     /**
      * Creates a vector with only one element, which is a byte representation of this message.
-     * @return A vector with byte representation of this message.
+     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
+     * @return Number of raw packages = 1.
      */
-    std::vector<uint8_t*> getRawPackages() override;
+    uint8_t getRawPackages(uint8_t** data) override;
 };
 
 /**
@@ -420,9 +426,10 @@ public:
 
     /**
      * Creates a vector with only one element, which is a byte representation of this message.
-     * @return A vector with byte representation of this message.
+     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
+     * @return Number of raw packages = 1.
      */
-    std::vector<uint8_t*> getRawPackages() override;
+    uint8_t getRawPackages(uint8_t** data) override;
 };
 
 /**
@@ -492,9 +499,10 @@ public:
 
     /**
      * Creates a vector with only one element, which is a byte representation of this message.
-     * @return A vector with byte representation of this message.
+     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
+     * @return Number of raw packages = 1.
      */
-    std::vector<uint8_t*> getRawPackages() override;
+    uint8_t getRawPackages(uint8_t** data) override;
 };
 
 /**
@@ -571,9 +579,10 @@ public:
 
     /**
      * Creates a vector with only one element, which is a byte representation of this message.
-     * @return A vector with byte representation of this message.
+     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
+     * @return Number of raw packages = 1.
      */
-    std::vector<uint8_t*> getRawPackages() override;
+    uint8_t getRawPackages(uint8_t** data) override;
 };
 
 /**
@@ -627,9 +636,10 @@ public:
 
     /**
      * Creates a vector with only one element, which is a byte representation of this message.
-     * @return A vector with byte representation of this message.
+     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
+     * @return Number of raw packages = 1.
      */
-    std::vector<uint8_t*> getRawPackages() override;
+    uint8_t getRawPackages(uint8_t** data) override;
 };
 
 /**
@@ -683,9 +693,10 @@ public:
 
     /**
      * Creates a vector with only one element, which is a byte representation of this message.
-     * @return A vector with byte representation of this message.
+     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
+     * @return Number of raw packages = 1.
      */
-    std::vector<uint8_t*> getRawPackages() override;
+    uint8_t getRawPackages(uint8_t** data) override;
 };
 
 /**
@@ -775,9 +786,10 @@ public:
 
     /**
      * Creates a vector with only one element, which is a byte representation of this message.
-     * @return A vector with byte representation of this message.
+     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
+     * @return Number of raw packages = 1.
      */
-    std::vector<uint8_t*> getRawPackages() override;
+    uint8_t getRawPackages(uint8_t** data) override;
 };
 
 /**
@@ -822,9 +834,10 @@ public:
 
     /**
      * Creates a vector with only one element, which is a byte representation of this message.
-     * @return A vector with byte representation of this message.
+     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
+     * @return Number of raw packages = 1.
      */
-    std::vector<uint8_t*> getRawPackages() override;
+    uint8_t getRawPackages(uint8_t** data) override;
 };
 
 #endif //NETWORKPROTOCOL_MESSAGEOBJECTS_H

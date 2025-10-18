@@ -36,9 +36,11 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
 
         CommandMessage msg = CommandMessage(id, false, false, command, messageId, origin, content, contentSizes[i]);
 
-        std::vector<uint8_t*> rawPackages = msg.getRawPackages();
+        uint8_t *dataAddress[1];
+        uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
+        uint8_t *rawPackages = *dataAddress;
 
-        BOOST_CHECK_EQUAL(rawPackages.size(), numberPackages[i]);
+        BOOST_CHECK_EQUAL(gotNumberPackages, numberPackages[i]);
 
         MessageBuilder builder;
 
@@ -46,7 +48,7 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
         for (int j1 = 0; j1 < numberPackages[i]; j1++) {
             int j = numberPackages[i] > 1 && j1 < 2 ? 1 - j1 : j1;
 
-            uint8_t *package = rawPackages.at(j);
+            uint8_t *package = rawPackages + j * 32;
 
             BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
             BOOST_CHECK_EQUAL(package[1], id);
@@ -59,7 +61,7 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
 
             BOOST_CHECK_EQUAL(createdMessageId, messageId);
 
-            auto* createdMsg = dynamic_cast<PartialCommandMessage *>(Message::fromRawBytes(rawPackages.at(j)));
+            auto* createdMsg = dynamic_cast<PartialCommandMessage *>(Message::fromRawBytes(rawPackages + j * 32));
 
             BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
             BOOST_CHECK_EQUAL(createdMsg->receiver, id);
@@ -98,7 +100,7 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
             }
         }
 
-        Message::cleanUp(&rawPackages);
+        Message::cleanUp(rawPackages);
     }
 }
 
