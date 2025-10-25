@@ -62,7 +62,7 @@ Tells the parent of a device d, that there is a new device, that can be reached 
 
 Accept/Reject (3)
 
-Accepts or rejects the endpoint, that is trying to register. Sends the ID of the new device in the receiver field or temporary if it does not have one (ID field = 0).\
+Accepts or rejects the endpoint, that is trying to register. Sends the ID of the new device in the receiver field and the ID field (this makes the code easier) or temporary if it does not have one.\
 Additional fields:
 - [9] 1 Byte: Accept (1)/Reject (0)
 
