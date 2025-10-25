@@ -98,11 +98,8 @@ public:
      * @param receiver Receiver of this message.
      * @param typeAndGroups Message type and group flags.
      */
-    Message(uint8_t receiver, uint8_t typeAndGroups) {
-        this->version = NETWORKPROTOCOL_VERSION;
-        this->receiver = receiver;
-        this->typeAndGroups = typeAndGroups;
-    }
+    Message(uint8_t receiver, uint8_t typeAndGroups) :
+        version(NETWORKPROTOCOL_VERSION), receiver(receiver), typeAndGroups(typeAndGroups) {}
 
     /**
      * Base constructor for a new Message.
@@ -110,10 +107,8 @@ public:
      * @param group Is the receiver a group.
      * @param groupAscending Is the receiver ascending to the hub.
      */
-    Message(uint8_t receiver, bool group, bool groupAscending) {
-        this->version = NETWORKPROTOCOL_VERSION;
-        this->receiver = receiver;
-        this->typeAndGroups = 0;
+    Message(uint8_t receiver, bool group, bool groupAscending) :
+        version(NETWORKPROTOCOL_VERSION), receiver(receiver), typeAndGroups(0) {
         setGroup(group);
         setGroupAscending(groupAscending);
     }
@@ -225,11 +220,7 @@ public:
      */
     explicit PartialCommandMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t packageNumber,
         uint16_t messageID, uint8_t origin, const uint8_t* content)
-        : Message(receiver, typeAndGroups) {
-
-        this->packageNumber = packageNumber;
-        this->messageID = messageID;
-        this->origin = origin;
+        : Message(receiver, typeAndGroups), messageID(messageID), origin(origin), packageNumber(packageNumber) {
         memcpy(this->content, content, COMMAND_SLOTS);
     }
 
@@ -245,11 +236,7 @@ public:
      */
     explicit PartialCommandMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t packageNumber,
         uint16_t messageID, uint8_t origin, const uint8_t* content)
-        : Message(receiver, group, groupAscending) {
-
-        this->packageNumber = packageNumber;
-        this->messageID = messageID;
-        this->origin = origin;
+        : Message(receiver, group, groupAscending), messageID(messageID), origin(origin), packageNumber(packageNumber) {
         memcpy(this->content, content, COMMAND_SLOTS);
     }
 
@@ -293,61 +280,79 @@ public:
 };
 
 /**
- * Class for register messages.
+ * Super class for all messages for registration.
  */
-class RegisterMessage : public Message {
+class RegistrationMessage : public Message {
 public:
     using Message::Message;
 
     /**
-     * Constructor for partial command messages.
+     * Constructor for a registration message.
      * @param receiver Receiver of this message.
      * @param typeAndGroups Message type and group flags.
      * @param newDeviceID ID of the new device.
+     * @param tempID Temporary ID.
+     * @param registrationType Registration type of this message.
+     * @param extraField Extra field depends of the registration type.
      */
-    explicit RegisterMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t newDeviceID)
-        : Message(receiver, typeAndGroups) {
-        this->tempID = 0;
-        this->newDeviceID = newDeviceID;
-    }
+    explicit RegistrationMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t newDeviceID,
+        uint32_t tempID, uint8_t registrationType, bool extraField = false)
+        : Message(receiver, typeAndGroups), tempID(tempID), newDeviceID(newDeviceID),
+        registrationType(registrationType), extraField(extraField) {}
 
     /**
-     * Constructor for partial command messages.
+     * Constructor for a registration message.
+     * @param receiver Receiver of this message.
+     * @param typeAndGroups Message type and group flags.
+     * @param newDeviceID ID of the new device.
+     * @param registrationType Registration type of this message.
+     * @param extraField Extra field depends of the registration type.
+     */
+    explicit RegistrationMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t newDeviceID,
+        uint8_t registrationType, bool extraField = false)
+        : Message(receiver, typeAndGroups), tempID(0), newDeviceID(newDeviceID),
+        registrationType(registrationType), extraField(extraField) {}
+
+    /**
+     * Constructor for a registration command message.
      * @param receiver Receiver of this message.
      * @param typeAndGroups Message type and group flags.
      * @param tempID Temporary ID for this device.
+     * @param registrationType Registration type of this message.
+     * @param extraField Extra field depends of the registration type.
      */
-    explicit RegisterMessage(uint8_t receiver, uint8_t typeAndGroups, uint32_t tempID)
-        : Message(receiver, typeAndGroups) {
-        this->tempID = tempID;
-        this->newDeviceID = 0;
-    }
+    explicit RegistrationMessage(uint8_t receiver, uint8_t typeAndGroups, uint32_t tempID,
+        uint8_t registrationType, bool extraField = false)
+        : Message(receiver, typeAndGroups), tempID(tempID), newDeviceID(0),
+        registrationType(registrationType), extraField(extraField) {}
 
     /**
-     * Constructor for partial command messages.
+     * Constructor for a registration command message.
      * @param receiver Receiver of this message.
      * @param group Is the receiver a group.
      * @param groupAscending Is the receiver ascending to the hub.
      * @param newDeviceID ID of the new device.
+     * @param registrationType Registration type of this message.
+     * @param extraField Extra field depends of the registration type.
      */
-    explicit RegisterMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t newDeviceID)
-        : Message(receiver, group, groupAscending) {
-        this->tempID = 0;
-        this->newDeviceID = newDeviceID;
-    }
+    explicit RegistrationMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t newDeviceID,
+        uint8_t registrationType, bool extraField = false)
+        : Message(receiver, group, groupAscending), tempID(0), newDeviceID(newDeviceID),
+        registrationType(registrationType), extraField(extraField) {}
 
     /**
-     * Constructor for partial command messages.
+     * Constructor for a registration command message.
      * @param receiver Receiver of this message.
      * @param group Is the receiver a group.
      * @param groupAscending Is the receiver ascending to the hub.
      * @param tempID Temporary ID for this device.
+     * @param registrationType Registration type of this message.
+     * @param extraField Extra field depends of the registration type.
      */
-    explicit RegisterMessage(uint8_t receiver, bool group, bool groupAscending, uint32_t tempID)
-        : Message(receiver, group, groupAscending) {
-        this->tempID = tempID;
-        this->newDeviceID = 0;
-    }
+    explicit RegistrationMessage(uint8_t receiver, bool group, bool groupAscending, uint32_t tempID,
+        uint8_t registrationType, bool extraField = false)
+        : Message(receiver, group, groupAscending), tempID(tempID), newDeviceID(0),
+        registrationType(registrationType), extraField(extraField) {}
 
     /**
      * Temporary ID if ID = 0.
@@ -360,68 +365,24 @@ public:
     uint8_t newDeviceID;
 
     /**
+     * Registration type of this message.
+     * 0: Discover
+     * 1: Register
+     * 2: Route Creation
+     * 3: Accept/Reject
+     */
+    uint8_t registrationType;
+
+    /**
+     * Registration type of this message.
+     */
+    bool extraField;
+
+    /**
      * @return Type of this message.
      */
     uint8_t getType() override {
         return 1;
-    }
-
-    /**
-     * Creates a vector with only one element, which is a byte representation of this message.
-     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
-     * @return Number of raw packages = 1.
-     */
-    uint8_t getRawPackages(uint8_t** data) override;
-};
-
-/**
- * Class for message, that indicate whether a registration has benn accepted or rejected.
- */
-class AcceptRejectMessage : public Message {
-public:
-
-    /**
-     * Constructor for accept or reject messages.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param isAccept Indicates whether this is an accept or reject message.
-     * @param tempID Temporary ID of the new device if receiver ID = 0.
-     */
-    explicit AcceptRejectMessage(uint8_t receiver, uint8_t typeAndGroups, bool isAccept, uint32_t tempID = 0)
-        : Message(receiver, typeAndGroups) {
-        this->isAccept = isAccept;
-        this->tempID = tempID;
-    }
-
-    /**
-     * Constructor for accept or reject messages.
-     * @param receiver Receiver of this message.
-     * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
-     * @param isAccept Indicates whether this is an accept or reject message.
-     * @param tempID Temporary ID of the new device if receiver ID = 0.
-     */
-    explicit AcceptRejectMessage(uint8_t receiver, bool group, bool groupAscending, bool isAccept, uint32_t tempID = 0)
-        : Message(receiver, group, groupAscending) {
-        this->isAccept = isAccept;
-        this->tempID = tempID;
-    }
-
-    /**
-     * Temporary ID if ID = 0.
-     */
-    uint32_t tempID;
-
-    /**
-     * Indicates whether the new device is accepted or rejected.
-     */
-    bool isAccept;
-
-    /**
-     * @return Type of this message.
-     */
-    uint8_t getType() override {
-        return 2;
     }
 
     /**
@@ -494,87 +455,7 @@ public:
      * @return Type of this message.
      */
     uint8_t getType() override {
-        return 3;
-    }
-
-    /**
-     * Creates a vector with only one element, which is a byte representation of this message.
-     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
-     * @return Number of raw packages = 1.
-     */
-    uint8_t getRawPackages(uint8_t** data) override;
-};
-
-/**
- * Class for route creation messages.
- */
-class RouteCreationMessage : public Message {
-public:
-    /**
-     * Constructor for route creation messages.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param newDeviceID ID of the new device. 0 if the device has not been been registered before.
-     */
-    explicit RouteCreationMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t newDeviceID)
-    : Message(receiver, typeAndGroups) {
-        this->newDeviceID = newDeviceID;
-        this->tempID = 0;
-    }
-
-    /**
-     * Constructor for route creation messages.
-     * @param receiver Receiver of this message.
-     * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
-     * @param newDeviceID ID of the new device. 0 if the device has not been been registered before.
-     */
-    explicit RouteCreationMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t newDeviceID)
-    : Message(receiver, group, groupAscending) {
-        this->newDeviceID = newDeviceID;
-        this->tempID = 0;
-    }
-
-    /**
-     * Constructor for route creation messages.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param tempID Temporary ID if ID = 0.
-     */
-    explicit RouteCreationMessage(uint8_t receiver, uint8_t typeAndGroups, uint32_t tempID)
-        : Message(receiver, typeAndGroups) {
-        this->newDeviceID = 0;
-        this->tempID = tempID;
-    }
-
-    /**
-     * Constructor for route creation messages.
-     * @param receiver Receiver of this message.
-     * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
-     * @param tempID Temporary ID if ID = 0.
-     */
-    explicit RouteCreationMessage(uint8_t receiver, bool group, bool groupAscending, uint32_t tempID)
-        : Message(receiver, group, groupAscending) {
-        this->newDeviceID = 0;
-        this->tempID = tempID;
-    }
-
-    /**
-     * Temporary ID if ID = 0.
-     */
-    uint32_t tempID;
-
-    /**
-     * ID of the new device. 0 if the device has not been been registered before.
-     */
-    uint8_t newDeviceID;
-
-    /**
-     * @return Type of this message.
-     */
-    uint8_t getType() override {
-        return 4;
+        return 2;
     }
 
     /**
@@ -631,7 +512,7 @@ public:
      * @return Type of this message.
      */
     uint8_t getType() override {
-        return 5;
+        return 3;
     }
 
     /**
@@ -688,100 +569,7 @@ public:
      * @return Type of this message.
      */
     uint8_t getType() override {
-        return 6;
-    }
-
-    /**
-     * Creates a vector with only one element, which is a byte representation of this message.
-     * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
-     * @return Number of raw packages = 1.
-     */
-    uint8_t getRawPackages(uint8_t** data) override;
-};
-
-/**
- * Class for discovery messages to find near devices.
- */
-class DiscoverMessage : public Message {
-public:
-    /**
-     * Constructor for messages to add or remove devices to/from a group.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param isRequest True if this message is a request for discovery, False if it is a response.
-     * @param ID ID of the discovering device.
-     */
-    explicit DiscoverMessage(uint8_t receiver, uint8_t typeAndGroups, bool isRequest, uint8_t ID)
-        : Message(receiver, typeAndGroups) {
-        this->isRequest = isRequest;
-        this->tempID = 0;
-        this->ID = ID;
-    }
-
-    /**
-     * Constructor for messages to add or remove devices to/from a group.
-     * @param receiver Receiver of this message.
-     * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
-     * @param isRequest True if this message is a request for discovery, False if it is a response.
-     * @param ID ID of the discovering device.
-     */
-    explicit DiscoverMessage(uint8_t receiver, bool group, bool groupAscending, bool isRequest, uint8_t ID)
-        : Message(receiver, group, groupAscending) {
-        this->isRequest = isRequest;
-        this->tempID = 0;
-        this->ID = ID;
-    }
-
-    /**
-     * Constructor for messages to add or remove devices to/from a group.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param isRequest True if this message is a request for discovery, False if it is a response.
-     * @param tempID Temporary ID if ID = 0.
-     */
-    explicit DiscoverMessage(uint8_t receiver, uint8_t typeAndGroups, bool isRequest, uint32_t tempID)
-        : Message(receiver, typeAndGroups) {
-        this->isRequest = isRequest;
-        this->tempID = tempID;
-        this->ID = 0;
-    }
-
-    /**
-     * Constructor for messages to add or remove devices to/from a group.
-     * @param receiver Receiver of this message.
-     * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
-     * @param isRequest True if this message is a request for discovery, False if it is a response.
-     * @param tempID Temporary ID if ID = 0.
-     */
-    explicit DiscoverMessage(uint8_t receiver, bool group, bool groupAscending, bool isRequest, uint32_t tempID)
-        : Message(receiver, group, groupAscending) {
-        this->isRequest = isRequest;
-        this->tempID = tempID;
-        this->ID = 0;
-    }
-
-    /**
-     * Temporary ID if ID = 0.
-     */
-    uint32_t tempID;
-
-    /**
-     * ID of the discovering device.
-     */
-    uint8_t ID;
-
-    /**
-     * True if this message is a request for discovery, False if it is a response.
-     */
-    bool isRequest;
-
-    /**
-     * @return Type of this message.
-     */
-    uint8_t getType() override {
-        return 7;
+        return 4;
     }
 
     /**
@@ -829,7 +617,7 @@ public:
      * @return Type of this message.
      */
     uint8_t getType() override {
-        return 8;
+        return 5;
     }
 
     /**

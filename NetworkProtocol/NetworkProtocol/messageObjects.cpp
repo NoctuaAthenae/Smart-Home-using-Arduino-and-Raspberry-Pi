@@ -32,52 +32,26 @@ Message *Message::fromRawBytes(const uint8_t *rawPackage) {
                 rawPackage[4], rawPackage + COMMAND_METADATA_SLOTS);
         }
         case 1: {
-            uint8_t newDeviceId = rawPackage[3];
+            uint8_t newDeviceId = rawPackage[4];
             if (newDeviceId == 0) {
                 uint32_t id = 0;
-                memcpy(&id, rawPackage + 4, 4);
-                return new RegisterMessage(rawPackage[1], rawPackage[2], id);
+                memcpy(&id, rawPackage + 5, 4);
+                return new RegistrationMessage(rawPackage[1], rawPackage[2], newDeviceId, id, rawPackage[3], rawPackage[9]);
             }
-            return new RegisterMessage(rawPackage[1], rawPackage[2], newDeviceId);
+            return new RegistrationMessage(rawPackage[1], rawPackage[2], newDeviceId, rawPackage[3], static_cast<bool>(rawPackage[9]));
         }
         case 2: {
-            uint8_t receiver = rawPackage[1];
-            uint32_t id = 0;
-            if (receiver == 0) {
-                memcpy(&id, rawPackage + 4, 4);
-            }
-            return new AcceptRejectMessage(receiver, rawPackage[2], rawPackage[3], id);
-        }
-        case 3: {
             uint32_t timestamp = 0;
             memcpy(&timestamp, rawPackage + 6, 4);
             return new PingMessage(rawPackage[1], rawPackage[2], rawPackage[4], rawPackage[3], rawPackage[5], timestamp);
         }
-        case 4: {
-            uint8_t newDeviceId = rawPackage[3];
-            if (newDeviceId == 0) {
-                uint32_t id = 0;
-                memcpy(&id, rawPackage + 4, 4);
-                return new RouteCreationMessage(rawPackage[1], rawPackage[2], id);
-            }
-            return new RouteCreationMessage(rawPackage[1], rawPackage[2], newDeviceId);
-        }
-        case 5: {
+        case 3: {
             return new AddRemoveToGroupMessage(rawPackage[1], rawPackage[2], rawPackage[4], rawPackage[3]);
         }
-        case 6: {
+        case 4: {
             return new ErrorMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage + 4);
         }
-        case 7: {
-            uint8_t deviceId = rawPackage[4];
-            uint32_t tempId = 0;
-            if (deviceId == 0) {
-                memcpy(&tempId, rawPackage + 5, 4);
-                return new DiscoverMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], tempId);
-            }
-            return new DiscoverMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage[4], deviceId);
-        }
-        case 8: {
+        case 5: {
             return new ReDisconnectMessage(rawPackage[1], rawPackage[2], rawPackage[3]);
         }
         default: {
@@ -159,17 +133,12 @@ uint8_t CommandMessage::getRawPackages(uint8_t** data) {
     return numberPackages;
 }
 
-uint8_t RegisterMessage::getRawPackages(uint8_t** data) {
+uint8_t RegistrationMessage::getRawPackages(uint8_t** data) {
     Message::getRawPackages(data);
-    (*data)[3] = this->newDeviceID;
-    memcpy((*data) + 4, &this->tempID, 4);
-    return 1;
-}
-
-uint8_t AcceptRejectMessage::getRawPackages(uint8_t** data) {
-    Message::getRawPackages(data);
-    (*data)[3] = this->isAccept;
-    memcpy((*data) + 4, &this->tempID, 4);
+    (*data)[3] = this->registrationType;
+    (*data)[4] = this->newDeviceID;
+    memcpy((*data) + 5, &this->tempID, 4);
+    (*data)[9] = this->extraField;
     return 1;
 }
 
@@ -179,13 +148,6 @@ uint8_t PingMessage::getRawPackages(uint8_t** data) {
     (*data)[4] = this->pingId;
     (*data)[5] = this->isResponse;
     memcpy((*data) + 6, &this->timestamp, 4);
-    return 1;
-}
-
-uint8_t RouteCreationMessage::getRawPackages(uint8_t** data) {
-    Message::getRawPackages(data);
-    (*data)[3] = this->newDeviceID;
-    memcpy((*data) + 4, &this->tempID, 4);
     return 1;
 }
 
@@ -200,14 +162,6 @@ uint8_t ErrorMessage::getRawPackages(uint8_t** data) {
     Message::getRawPackages(data);
     (*data)[3] = this->errorCode;
     memcpy((*data) + 4, this->erroneousMessage, 28);
-    return 1;
-}
-
-uint8_t DiscoverMessage::getRawPackages(uint8_t** data) {
-    Message::getRawPackages(data);
-    (*data)[3] = this->isRequest;
-    (*data)[4] = this->ID;
-    memcpy((*data) + 5, &this->tempID, 4);
     return 1;
 }
 
