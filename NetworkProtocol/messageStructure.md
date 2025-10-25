@@ -38,26 +38,36 @@ void send(byte destination, byte command, byte[] payload)
 void sendToGroup(byte destination, byte command, byte[] payload)
 ```
 
-### Register (1)
+### Registration (1)
 
-Registers an endpoint to the network at startup of the endpoint. See Registration for information.\
 Additional fields:
-- [3] 1 Byte: ID
-- [4] 4 Byte: Temporary ID (timestamp, used if ID is 0)
+- [3] 1 Byte: Registration Message Type 
+- [4] 1 Byte: ID
+- [5] 4 Byte: Temporary ID (timestamp, used if ID is 0)
 
-```
-void setup(byte id)
-```
 
-### Accept/Reject (2)
+Discover (0)
 
-Accepts or rejects the endpoint, that is trying to register.\
+A new device sends a discover message to find the best parent over the discover channel (RF24: Sends with discover ID as sender ID). Sends own ID in the ID field or temporary if it does not have one.\
 Additional fields:
-- [3] 1 Byte: Accept (1)/Reject (0)
-- [4] 4 Byte: Temporary ID (used if receiver is 0)
-Only sent by the protocol.
+- [9] 1 Byte: Request/Answer
 
-### Ping (3)
+Register (1)
+
+Registers an endpoint to the network at startup of the endpoint. See Registration for information. Sends own ID in the ID field or temporary if it does not have one.\
+
+Route Creation (2)
+
+Tells the parent of a device d, that there is a new device, that can be reached via d. Sends the ID of the new device in the ID field or temporary if it does not have one.\
+
+Accept/Reject (3)
+
+Accepts or rejects the endpoint, that is trying to register. Sends the ID of the new device in the receiver field or temporary if it does not have one (ID field = 0).\
+Additional fields:
+- [9] 1 Byte: Accept (1)/Reject (0)
+
+
+### Ping (2)
 
 Pings a device.\
 Additional fields:
@@ -72,16 +82,7 @@ void ping(byte destination)
 
 Represents both ping request and response. The response is marked with the IsResponse field
 
-### Route Creation (4)
-
-Tells the parent of a device d, that there is a new device, that can be reached via d.\
-Additional fields:
-- [3] 1 Byte: ID of the new endpoint
-- [4] 4 Byte: Temporary ID (timestamp, used if ID is 0)
-
-Only sent by the protocol.
-
-### Add To/Remove From Group (5)
+### Add To/Remove From Group (3)
 
 Adds or removes an endpoint to/from a group for broadcasting to a group of specific devices.\
 Additional fields:
@@ -90,7 +91,7 @@ Additional fields:
 
 Can only be done at the interface of the hub, so the message is only sent by the protocol.
 
-### Error (6)
+### Error (4)
 
 Signals an error, that occurred during another message.\
 Additional fields:
@@ -99,17 +100,7 @@ Additional fields:
 
 This error message is reserved for use by the protocol. For application errors use the command message. All errors are logged at the hop.
 
-### Discover (7)
-
-A new device sends a discover message to find the best parent.\
-Additional fields:
-- [3] 1 Byte: Request/Answer
-- [4] 1 Byte: ID
-- [5] 4 Byte: Temporary ID (timestamp, used if ID is 0)
-
-Only sent by the protocol during setup.
-
-### Disconnected/Reconnect (8)
+### Disconnected/Reconnect (5)
 
 If the hub pings a device, which does not answer, it sends a disconnect message down its routing path.\
 If a device finds a better parent, it sends a reconnect message to its new parent.\
