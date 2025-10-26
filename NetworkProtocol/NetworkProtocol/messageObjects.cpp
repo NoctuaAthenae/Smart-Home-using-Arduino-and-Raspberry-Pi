@@ -33,12 +33,9 @@ Message *Message::fromRawBytes(const uint8_t *rawPackage) {
         }
         case 1: {
             uint8_t newDeviceId = rawPackage[4];
-            if (newDeviceId == 0) {
-                uint32_t id = 0;
-                memcpy(&id, rawPackage + 5, 4);
-                return new RegistrationMessage(rawPackage[1], rawPackage[2], newDeviceId, id, rawPackage[3], rawPackage[9]);
-            }
-            return new RegistrationMessage(rawPackage[1], rawPackage[2], newDeviceId, rawPackage[3], static_cast<bool>(rawPackage[9]));
+            uint32_t id = 0;
+            memcpy(&id, rawPackage + 5, 4);
+            return new RegistrationMessage(rawPackage[1], rawPackage[2], newDeviceId, id, rawPackage[3], static_cast<bool>(rawPackage[9]));
         }
         case 2: {
             uint32_t timestamp = 0;

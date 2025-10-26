@@ -120,7 +120,7 @@ public:
  */
 class CommandMessage : public Message {
 public:
-    ~CommandMessage() {
+    ~CommandMessage() override {
         delete[] content;
     };
 
@@ -138,7 +138,7 @@ public:
     explicit CommandMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t command,
         uint16_t messageID, uint8_t origin, uint8_t* content, uint16_t contentSize)
         : Message(receiver, typeAndGroups),
-            command(command), messageID(messageID), origin(origin), content(content), contentSize(contentSize) {}
+            messageID(messageID), origin(origin), command(command), content(content), contentSize(contentSize) {}
 
     /**
      * Constructor for command messages.
@@ -155,13 +155,13 @@ public:
     explicit CommandMessage(uint8_t receiver, bool group, bool groupAscending,
         uint8_t command, uint16_t messageID, uint8_t origin, uint8_t* content, uint16_t contentSize)
         : Message(receiver, group, groupAscending),
-        command(command), messageID(messageID), origin(origin), content(content), contentSize(contentSize) {}
+        messageID(messageID), origin(origin), command(command), content(content), contentSize(contentSize) {}
 
     /**
      * Constructor for dummy command messages.
      */
     explicit CommandMessage() : Message(0, 0),
-        messageID(0), command(0), origin(0), content(nullptr), contentSize(0) {}
+        messageID(0), origin(0), command(0), content(nullptr), contentSize(0) {}
 
     /**
      * ID of the message.
@@ -258,7 +258,7 @@ public:
     /**
      * Parameters and other content of this part of the message.
      */
-    uint8_t content[COMMAND_SLOTS];
+    uint8_t content[COMMAND_SLOTS]{};
 
 
     /**
@@ -296,62 +296,23 @@ public:
      * @param extraField Extra field depends of the registration type.
      */
     explicit RegistrationMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t newDeviceID,
-        uint32_t tempID, uint8_t registrationType, bool extraField = false)
+        uint32_t tempID, uint8_t registrationType, uint8_t extraField = 0)
         : Message(receiver, typeAndGroups), tempID(tempID), newDeviceID(newDeviceID),
         registrationType(registrationType), extraField(extraField) {}
 
     /**
-     * Constructor for a registration message.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param newDeviceID ID of the new device.
-     * @param registrationType Registration type of this message.
-     * @param extraField Extra field depends of the registration type.
-     */
-    explicit RegistrationMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t newDeviceID,
-        uint8_t registrationType, bool extraField = false)
-        : Message(receiver, typeAndGroups), tempID(0), newDeviceID(newDeviceID),
-        registrationType(registrationType), extraField(extraField) {}
-
-    /**
-     * Constructor for a registration command message.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param tempID Temporary ID for this device.
-     * @param registrationType Registration type of this message.
-     * @param extraField Extra field depends of the registration type.
-     */
-    explicit RegistrationMessage(uint8_t receiver, uint8_t typeAndGroups, uint32_t tempID,
-        uint8_t registrationType, bool extraField = false)
-        : Message(receiver, typeAndGroups), tempID(tempID), newDeviceID(0),
-        registrationType(registrationType), extraField(extraField) {}
-
-    /**
      * Constructor for a registration command message.
      * @param receiver Receiver of this message.
      * @param group Is the receiver a group.
      * @param groupAscending Is the receiver ascending to the hub.
      * @param newDeviceID ID of the new device.
+     * @param tempID Temporary ID for this device.
      * @param registrationType Registration type of this message.
      * @param extraField Extra field depends of the registration type.
      */
     explicit RegistrationMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t newDeviceID,
-        uint8_t registrationType, bool extraField = false)
-        : Message(receiver, group, groupAscending), tempID(0), newDeviceID(newDeviceID),
-        registrationType(registrationType), extraField(extraField) {}
-
-    /**
-     * Constructor for a registration command message.
-     * @param receiver Receiver of this message.
-     * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
-     * @param tempID Temporary ID for this device.
-     * @param registrationType Registration type of this message.
-     * @param extraField Extra field depends of the registration type.
-     */
-    explicit RegistrationMessage(uint8_t receiver, bool group, bool groupAscending, uint32_t tempID,
-        uint8_t registrationType, bool extraField = false)
-        : Message(receiver, group, groupAscending), tempID(tempID), newDeviceID(0),
+        uint32_t tempID, uint8_t registrationType, uint8_t extraField = 0)
+        : Message(receiver, group, groupAscending), tempID(tempID), newDeviceID(newDeviceID),
         registrationType(registrationType), extraField(extraField) {}
 
     /**
@@ -376,7 +337,7 @@ public:
     /**
      * Registration type of this message.
      */
-    bool extraField;
+    uint8_t extraField;
 
     /**
      * @return Type of this message.
@@ -424,7 +385,7 @@ public:
      * @param timestamp Timestamp of this message.
      */
     explicit PingMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t pingId, uint8_t senderId, bool isResponse, uint32_t timestamp)
-    : Message(receiver, group, groupAscending) {
+        : Message(receiver, group, groupAscending) {
         this->pingId = pingId;
         this->senderId = senderId;
         this->isResponse = isResponse;
