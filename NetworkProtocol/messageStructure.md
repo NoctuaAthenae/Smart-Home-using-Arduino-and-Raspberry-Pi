@@ -43,26 +43,26 @@ void sendToGroup(byte destination, byte command, byte[] payload)
 Additional fields:
 - [3] 1 Byte: Registration Message Type 
 - [4] 1 Byte: ID
-- [5] 4 Byte: Temporary ID (timestamp, used if ID is 0)
+- [5] 4 Byte: Temporary ID
 
 
 Discover (0)
 
-A new device sends a discover message to find the best parent over the discover channel (RF24: Sends with discover ID as sender ID). Sends own ID in the ID field or temporary if it does not have one.\
+A new device sends a discover message to find the best parent over the discover channel (RF24: Sends with discover ID as sender ID). Sends own ID in the ID field if it does have one.\
 Additional fields:
-- [9] 1 Byte: Request/Answer
+- [9] 1 Byte: Hierarchy Level of the discovered device (255 indicates, that this is a discovery request).
 
 Register (1)
 
-Registers an endpoint to the network at startup of the endpoint. See Registration for information. Sends own ID in the ID field or temporary if it does not have one.\
+Registers an endpoint to the network at startup of the endpoint. See Registration for information. Sends own ID in the ID field if it does have one.\
 
 Route Creation (2)
 
-Tells the parent of a device d, that there is a new device, that can be reached via d. Sends the ID of the new device in the ID field or temporary if it does not have one.\
+Tells the parent of a device d, that there is a new device, that can be reached via d. Sends the ID of the new device in the ID field if it does have one.\
 
 Accept/Reject (3)
 
-Accepts or rejects the endpoint, that is trying to register. Sends the ID of the new device in the receiver field and the ID field (this makes the code easier) or temporary if it does not have one.\
+Accepts or rejects the endpoint, that is trying to register. Sends the ID of the new device in the receiver field and the ID field (this makes the code easier) if it does have one.\
 Additional fields:
 - [9] 1 Byte: Accept (1)/Reject (0)
 
