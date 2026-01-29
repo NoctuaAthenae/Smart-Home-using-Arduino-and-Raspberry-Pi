@@ -335,7 +335,11 @@ public:
     uint8_t registrationType;
 
     /**
-     * Registration type of this message.
+     * Extra field. Content depends on type of this message.
+     * 0: Hierarchy level (255 for sent discovery, != 255 for response)
+     * 1: Not used
+     * 2: Not used
+     * 3: True if new device is accepted, false if rejected
      */
     uint8_t extraField;
 
