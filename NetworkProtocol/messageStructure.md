@@ -7,6 +7,7 @@ This Network Protocol is used for the communication between the central hub and 
 The hub and each endpoint has it's each unique identifier. There are the following special IDs:
 - 0: Hub
 - 255: Discover
+
 Also groups can be created and assigned an ID, broadcast to the group ID are received by every endpoint in the group. It is stored in one byte, limiting the number of possible endpoints to 254. Groups have an own address room, where group and endpoint IDs are distinguished by the Group flag. Each member of the network only pays attention to message of it's parents or children and ignores all other messages, that are accidentally received from another member in range. A message has an transmission identifier, to uniquely identify a message between two hops. If the messages is forwarded further, it gets a new ID. Since the transmission ID has only one byte the number of messages, that can be sent without being acknowledged is limited to 256.
 
 ## Messages
