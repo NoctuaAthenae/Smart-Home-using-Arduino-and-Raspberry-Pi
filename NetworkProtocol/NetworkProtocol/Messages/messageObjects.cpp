@@ -28,8 +28,8 @@ Message *Message::fromRawBytes(const uint8_t *rawPackage) {
         case 0: {
             uint16_t id = 0;
             memcpy(&id, rawPackage + 5, 2);
-            return new PartialCommandMessage(rawPackage[1], rawPackage[2], rawPackage[3], id,
-                rawPackage[4], rawPackage + COMMAND_METADATA_SLOTS);
+            return new PartialDataMessage(rawPackage[1], rawPackage[2], rawPackage[3], id,
+                rawPackage[4], rawPackage + METADATA_SLOTS);
         }
         case 1: {
             uint8_t newDeviceId = rawPackage[4];
@@ -78,11 +78,11 @@ void Message::cleanUp(const uint8_t* packages) {
 }
 
 
-uint8_t CommandMessage::getRawPackages(uint8_t** data) {
+uint8_t DataMessage::getRawPackages(uint8_t** data) {
 
-    // first package has 23 slots, all others 25
-    // if 24 slots are used: (24 + 1) / 25 + 1 = 25 / 25 + 1 = 2
-    uint8_t numberPackages = (this->contentSize + 1) / COMMAND_SLOTS + 1;
+    // first package has 24 slots, all others 25
+    // if 25 slots are used: 25 / 25 + 1 = 1 + 1 = 2
+    uint8_t numberPackages = (this->contentSize + FIRST_METADATA_SLOTS - 1) / DATA_SLOTS + 1;
 
     // set up the metadata of the message using the base function
     // use the created package as a template
@@ -99,30 +99,29 @@ uint8_t CommandMessage::getRawPackages(uint8_t** data) {
     *data = rawPackages;
 
     // the last package is not completely filled
-    // remove 23 for first package and 25 for all other packages beside the last
+    // remove 24 for first package and 25 for all other packages beside the last
     uint8_t lastPackageSize = this->contentSize -
         (numberPackages == 1 ? 0 : SLOT_COUNT(numberPackages - 1) - 2);
 
     for (uint8_t i = 0; i < numberPackages; i++) {
         // create a new raw package, copy the metadata from the template and set the package number
         auto *package = rawPackages + i * 32;
-        memcpy(package, templatePackage, COMMAND_METADATA_SLOTS);
+        memcpy(package, templatePackage, METADATA_SLOTS);
         package[3] = i;
 
         uint8_t extraMetaDataSize = 0;
         uint8_t startingIndex = SLOT_COUNT(i);
 
-        // first package saves total number of packages and command
+        // first package saves total number of packages
         if (i == 0) {
-            rawPackages[7] = this->command;
-            rawPackages[8] = numberPackages;
-            extraMetaDataSize = 2;
+            rawPackages[7] = numberPackages;
+            extraMetaDataSize = FIRST_METADATA_SLOTS;
             startingIndex = 0;
         }
 
         // copy the corresponding content into the slots
-        memcpy(package + COMMAND_METADATA_SLOTS + extraMetaDataSize, this->content + startingIndex,
-            i == numberPackages - 1 ? lastPackageSize : COMMAND_SLOTS - extraMetaDataSize);
+        memcpy(package + METADATA_SLOTS + extraMetaDataSize, this->content + startingIndex,
+            i == numberPackages - 1 ? lastPackageSize : DATA_SLOTS - extraMetaDataSize);
     }
 
     cleanUp(templatePackage);

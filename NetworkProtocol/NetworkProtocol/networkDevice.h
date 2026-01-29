@@ -64,19 +64,14 @@ class NetworkDevice {
     std::vector<uint8_t> groups;
 
     /**
-     * Command of the last message received.
-     */
-    uint8_t lastCommand;
-
-    /**
      * Target of the last returned ping.
      */
     uint8_t lastPingTarget;
 
     /**
-     * Size of the parameter array of the last message received.
+     * Size of the data array of the last message received.
      */
-    uint16_t lastParametersSize;
+    uint16_t lastDataSize;
 
     /**
      * Temporary ID of this device.
@@ -94,9 +89,9 @@ class NetworkDevice {
     uint8_t hierarchyLevel;
 
     /**
-     * Parameters of the last message received.
+     * Data of the last message received.
      */
-    uint8_t *lastParameters {};
+    uint8_t *lastData {};
 
     /**
      * Represents an ongoing discovery.
@@ -114,16 +109,15 @@ class NetworkDevice {
     uint16_t timeout;
 
     /**
-     * Assembles a command message object and sends it.
+     * Assembles a data message object and sends it.
      * @param receiver ID of the message's receiver/receiving group.
-     * @param command Command of the message.
      * @param group True if the receiver is a group.
      * @param groupAscending True if the message targeted to a group is still ascending.
-     * @param data Parameters and other data for the command.
+     * @param data Data of the message.
      * @param dataSize Size of the data.
      * @return True if the message has been sent successfully.
      */
-    bool _assembleAndSend(uint8_t receiver, uint8_t command, bool group, bool groupAscending, uint8_t* data, uint16_t dataSize);
+    bool _assembleAndSend(uint8_t receiver, bool group, bool groupAscending, uint8_t* data, uint16_t dataSize);
 
     /**
      * Sends the given message.
@@ -137,7 +131,7 @@ class NetworkDevice {
      * Processes the received message.
      * @param message Received message.
      * @param sender Sender of the message.
-     * @return True if it is a command message.
+     * @return True if it is a data message.
      */
     bool _processMessage(Message *message, uint8_t sender);
 
@@ -207,11 +201,11 @@ public:
      * @param discoveryTimeout Timeout for discoveries of other devices.
      */
     explicit NetworkDevice(const uint8_t id, uint16_t discoveryTimeout = 1000) : id(id), parent(0), nextID(0),
-        registered(false), lastCommand(0), lastPingTarget(0), hierarchyLevel(0), benchmark_wrapper(nullptr),
-        lastParametersSize(0), tempID(0), lastPingTime(0) {
+        registered(false), lastPingTarget(0), hierarchyLevel(0), benchmark_wrapper(nullptr),
+        lastDataSize(0), tempID(0), lastPingTime(0) {
         this->children[0] = this->children[1] = this->children[2] = this->children[3] = 0;
         this->discovery = new Discovery(discoveryTimeout, id);
-        this->lastParameters = new uint8_t[0];
+        this->lastData = new uint8_t[0];
         this->groups.push_back(0);
     }
 
@@ -222,32 +216,29 @@ public:
     bool update();
 
     /**
-     * Sends a command message.
+     * Sends a data message.
      * @param receiver ID of the message's receiver. 0 is broadcast.
-     * @param command Command of the message.
-     * @param data Parameters and other data for the command.
+     * @param data Data of the message.
      * @param dataSize Size of the data.
      * @return True if the message has been sent successfully.
      */
-    bool send(uint8_t receiver, uint8_t command, uint8_t* data, uint16_t dataSize);
+    bool send(uint8_t receiver, uint8_t* data, uint16_t dataSize);
 
     /**
-     * Sends a command message.
+     * Sends a data message.
      * @param group ID of the message's receiving group.
-     * @param command Command of the message.
-     * @param data Parameters and other data for the command.
+     * @param data Data of the message.
      * @param dataSize Size of the data.
      * @return True if the message has been sent successfully.
      */
-    bool sendToGroup(uint8_t group, uint8_t command, uint8_t* data, uint16_t dataSize);
+    bool sendToGroup(uint8_t group, uint8_t* data, uint16_t dataSize);
 
     /**
      * Receives the last message.
-     * @param data Parameters and other data for the command. Is allocated on the heap and has to be deleted.
-     * @param dataSize Size of the data.
-     * @return Command of the message.
+     * @param data Data of the message. Is allocated on the heap and has to be deleted.
+     * @return Size of the data.
      */
-    uint8_t receive(uint8_t** data, uint16_t* dataSize);
+    uint16_t receive(uint8_t** data);
 
 };
 

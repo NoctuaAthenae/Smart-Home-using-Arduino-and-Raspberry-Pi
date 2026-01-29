@@ -7,10 +7,11 @@
 #include <functional>
 
 #define NETWORKPROTOCOL_VERSION 0
-#define COMMAND_METADATA_SLOTS 7
-#define COMMAND_SLOTS (32 - COMMAND_METADATA_SLOTS)
-#define FIRST_COMMAND_SLOTS (COMMAND_SLOTS - 2)
-#define SLOT_COUNT(i) (FIRST_COMMAND_SLOTS + COMMAND_SLOTS * (i - 1))
+#define METADATA_SLOTS 7
+#define FIRST_METADATA_SLOTS 1
+#define DATA_SLOTS (32 - METADATA_SLOTS)
+#define FIRST_DATA_PACKAGE_SLOTS (DATA_SLOTS - FIRST_METADATA_SLOTS)
+#define SLOT_COUNT(i) (FIRST_DATA_PACKAGE_SLOTS + DATA_SLOTS * (i - 1))
 
 /**
  * Base class for all messages.
@@ -79,7 +80,7 @@ public:
     /**
      * Converts the messages to arrays of 32 bytes.
      * For messages larger than 32 bytes, the message is split and each message is added to the data array.
-     * Since only command messages can be larger than 32 bytes,
+     * Since only data messages can be larger than 32 bytes,
      * all other message types return a vector with only one entry.
      * @param data Pointer to an array of the data allocated in a row. Data is allocated on the heap.
      * Free with the cleanUp method.
@@ -116,52 +117,47 @@ public:
 
 
 /**
- * Class for command messages.
+ * Class for data messages.
  */
-class CommandMessage : public Message {
+class DataMessage : public Message {
 public:
-    ~CommandMessage() override {
+    ~DataMessage() override {
         delete[] content;
     };
 
     /**
-     * Constructor for command messages.
+     * Constructor for data messages.
      * @param receiver Receiver of this message.
      * @param typeAndGroups Message type and group flags.
-     * @param command Command type of the message.
      * @param messageID ID of the message.
-     * @param command Command type of the message.
-     * @param content Parameters and other content of the command. Allocated on the heap.
-     * Is deleted when this message is deleted.
+     * @param content Content of the message. Allocated on the heap. Is deleted when this message is deleted.
      * @param contentSize Size of the content.
      */
-    explicit CommandMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t command,
+    explicit DataMessage(uint8_t receiver, uint8_t typeAndGroups,
         uint16_t messageID, uint8_t origin, uint8_t* content, uint16_t contentSize)
         : Message(receiver, typeAndGroups),
-            messageID(messageID), origin(origin), command(command), content(content), contentSize(contentSize) {}
+            messageID(messageID), origin(origin), content(content), contentSize(contentSize) {}
 
     /**
-     * Constructor for command messages.
+     * Constructor for data messages.
      * @param receiver Receiver of this message.
      * @param group Is the receiver a group.
      * @param groupAscending Is the receiver ascending to the hub.
-     * @param command Command type of the message.
      * @param messageID ID of the message.
      * @param origin Device that created the message.
-     * @param content Parameters and other content of the command. Allocated on the heap.
-     * Is deleted when this message is deleted.
+     * @param content Content of the message. Allocated on the heap. Is deleted when this message is deleted.
      * @param contentSize Size of the content.
      */
-    explicit CommandMessage(uint8_t receiver, bool group, bool groupAscending,
-        uint8_t command, uint16_t messageID, uint8_t origin, uint8_t* content, uint16_t contentSize)
+    explicit DataMessage(uint8_t receiver, bool group, bool groupAscending, uint16_t messageID, uint8_t origin,
+        uint8_t* content, uint16_t contentSize)
         : Message(receiver, group, groupAscending),
-        messageID(messageID), origin(origin), command(command), content(content), contentSize(contentSize) {}
+        messageID(messageID), origin(origin), content(content), contentSize(contentSize) {}
 
     /**
-     * Constructor for dummy command messages.
+     * Constructor for dummy data messages.
      */
-    explicit CommandMessage() : Message(0, 0),
-        messageID(0), origin(0), command(0), content(nullptr), contentSize(0) {}
+    explicit DataMessage() : Message(0, 0),
+        messageID(0), origin(0), content(nullptr), contentSize(0) {}
 
     /**
      * ID of the message.
@@ -172,11 +168,6 @@ public:
      * Device that created the message.
      */
     uint8_t origin;
-
-    /**
-     * Command type of the message.
-     */
-    uint8_t command;
 
     /**
      * Parameters and other content of the message.
@@ -205,39 +196,39 @@ public:
 };
 
 /**
- * Class for partial command messages. Used when command messages arrive, but consist of multiple packages.
+ * Class for partial data messages. Used when data messages arrive, but consist of multiple packages.
  */
-class PartialCommandMessage : public Message {
+class PartialDataMessage : public Message {
 public:
     /**
-     * Constructor for partial command messages.
+     * Constructor for partial data messages.
      * @param receiver Receiver of this message.
      * @param typeAndGroups Message type and group flags.
      * @param packageNumber Number of this package.
      * @param messageID ID of the message.
      * @param origin Device that created the message.
-     * @param content Parameters and other content of the command.
+     * @param content Content of the message.
      */
-    explicit PartialCommandMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t packageNumber,
+    explicit PartialDataMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t packageNumber,
         uint16_t messageID, uint8_t origin, const uint8_t* content)
         : Message(receiver, typeAndGroups), messageID(messageID), origin(origin), packageNumber(packageNumber) {
-        memcpy(this->content, content, COMMAND_SLOTS);
+        memcpy(this->content, content, DATA_SLOTS);
     }
 
     /**
-     * Constructor for partial command messages.
+     * Constructor for partial data messages.
      * @param receiver Receiver of this message.
      * @param group Is the receiver a group.
      * @param groupAscending Is the receiver ascending to the hub.
      * @param packageNumber Number of this package.
      * @param messageID ID of the message.
      * @param origin Device that created the message.
-     * @param content Parameters and other content of the command.
+     * @param content Content of the message.
      */
-    explicit PartialCommandMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t packageNumber,
+    explicit PartialDataMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t packageNumber,
         uint16_t messageID, uint8_t origin, const uint8_t* content)
         : Message(receiver, group, groupAscending), messageID(messageID), origin(origin), packageNumber(packageNumber) {
-        memcpy(this->content, content, COMMAND_SLOTS);
+        memcpy(this->content, content, DATA_SLOTS);
     }
 
     /**
@@ -258,7 +249,7 @@ public:
     /**
      * Parameters and other content of this part of the message.
      */
-    uint8_t content[COMMAND_SLOTS]{};
+    uint8_t content[DATA_SLOTS]{};
 
 
     /**
@@ -301,7 +292,7 @@ public:
         registrationType(registrationType), extraField(extraField) {}
 
     /**
-     * Constructor for a registration command message.
+     * Constructor for a registration message.
      * @param receiver Receiver of this message.
      * @param group Is the receiver a group.
      * @param groupAscending Is the receiver ascending to the hub.

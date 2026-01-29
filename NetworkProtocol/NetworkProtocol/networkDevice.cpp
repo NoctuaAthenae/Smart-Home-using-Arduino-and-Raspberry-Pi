@@ -6,8 +6,8 @@
 
 #define DISCOVERY_CHANNEL 255
 
-bool NetworkDevice::_assembleAndSend(uint8_t receiver, uint8_t command, bool group, bool groupAscending, uint8_t *data, uint16_t dataSize) {
-    auto message = CommandMessage(receiver, group, groupAscending, command, this->nextID++,
+bool NetworkDevice::_assembleAndSend(uint8_t receiver, bool group, bool groupAscending, uint8_t *data, uint16_t dataSize) {
+    auto message = DataMessage(receiver, group, groupAscending, this->nextID++,
         this->id, data, dataSize);
 
     return this->_sendInternal(&message);
@@ -45,14 +45,13 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
 
     switch (message->getType()) {
         case 0: {
-            auto *command = dynamic_cast<CommandMessage *>(message);
-            this->lastCommand = command->command;
+            auto *dataMessage = dynamic_cast<DataMessage *>(message);
 
             // delete previous params and save the new
-            delete this->lastParameters;
-            this->lastParameters = new uint8_t[command->contentSize];
-            memcpy(this->lastParameters, command->content, command->contentSize);
-            this->lastParametersSize = command->contentSize;
+            delete this->lastData;
+            this->lastData = new uint8_t[dataMessage->contentSize];
+            memcpy(this->lastData, dataMessage->content, dataMessage->contentSize);
+            this->lastDataSize = dataMessage->contentSize;
             return true;
         }
         case 1: {
@@ -99,12 +98,13 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                             // if the device id is not set, assign first free ID
                             RegistrationMessage answerMsg = RegistrationMessage(0, false,
                                 false, 0, registrationMsg->tempID, 3, false);
-                            for (uint8_t i = 0; i < 256; ++i) {
+                            for (uint8_t i = 0; true; ++i) {
                                 if (this->routingTable.count(i) < 1) {
                                     answerMsg.newDeviceID = i;
                                     answerMsg.extraField = true;
                                     break;
                                 }
+                                if (i == 255) break;
                             }
                             this->_sendInternal(&answerMsg);
                         } else {
@@ -320,16 +320,15 @@ bool NetworkDevice::update() {
     return false;
 }
 
-bool NetworkDevice::send(uint8_t receiver, uint8_t command, uint8_t *data, uint16_t dataSize) {
-    return this->_assembleAndSend(receiver, command, false, false, data, dataSize);
+bool NetworkDevice::send(uint8_t receiver, uint8_t *data, uint16_t dataSize) {
+    return this->_assembleAndSend(receiver, false, false, data, dataSize);
 }
 
-bool NetworkDevice::sendToGroup(uint8_t group, uint8_t command, uint8_t *data, uint16_t dataSize) {
-    return this->_assembleAndSend(group, command, true, false, data, dataSize);
+bool NetworkDevice::sendToGroup(uint8_t group, uint8_t *data, uint16_t dataSize) {
+    return this->_assembleAndSend(group, true, false, data, dataSize);
 }
 
-uint8_t NetworkDevice::receive(uint8_t **data, uint16_t *dataSize) {
-    *data = this->lastParameters;
-    *dataSize = this->lastParametersSize;
-    return lastCommand;
+uint16_t NetworkDevice::receive(uint8_t **data) {
+    *data = this->lastData;
+    return this->lastDataSize;
 }

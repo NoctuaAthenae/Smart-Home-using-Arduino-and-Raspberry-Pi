@@ -6,7 +6,6 @@
 
 #include "ConnectionBenchmark.h"
 #include "../Messages/messageObjects.h"
-#include "../networkDevice.h"
 
 
 class ConnectionBenchmarkWrapper {
