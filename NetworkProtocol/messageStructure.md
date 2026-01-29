@@ -22,23 +22,22 @@ Each message consists of the following fields:
 - Variable: Message Type specific fields
 - Total of 3 Bytes for the standard meta data
 
-### Commands (0)
+### Data (0)
 
-Commands are used for exchanging data between the network members. It can consist of a single command or a command with parameters. Commands are stored in one byte, limiting the number of possible commands to 255, while the parameters can have variable data lengths. Each command message package contains its origin and message ID, which are used to identify the message and reconstruct it.\
+Data messages are used for exchanging data between the network members. The payload can have variable data lengths. Each data message package contains its origin and message ID, which are used to identify the message and reconstruct it.\
 Additional fields:
 - [3] 1 Byte: Package number
 - [4] 1 Byte: Origin
 - [5] 2 Byte: Message ID
-- [7] 1 Byte: Command (only for first package)
-- [8] 1 Byte: Total packages (only for first package)
+- [7] 1 Byte: Total packages (only for first package)
 - Variabel: Parameters
 
-The total size of meta data for a command package is 7 Bytes, which leaves 25 bytes per Package as the maximum for a nRF24L01 is 32 bytes. Since there is 1 byte for package numbers, there can be a maximum of 256 packages,
-which means the parameters can have 6 400 - 2 (Command and total packages) = 6 398 bytes at max.
+The total size of meta data for a data package is 7 Bytes, which leaves 25 bytes per Package as the maximum for a nRF24L01 is 32 bytes. Since there is 1 byte for package numbers, there can be a maximum of 256 packages,
+which means the parameters can have 6 400 - 1 (number total packages) = 6 398 bytes at max.
 
 ```
-void send(byte destination, byte command, byte[] payload)
-void sendToGroup(byte destination, byte command, byte[] payload)
+void send(byte destination, byte[] payload)
+void sendToGroup(byte destination, byte[] payload)
 ```
 
 ### Registration (1)
@@ -101,7 +100,7 @@ Additional fields:
 - [3] 1 Byte: Error code
 - [4] Variable: First 28 byte of original message
 
-This error message is reserved for use by the protocol. For application errors use the command message. All errors are logged at the hop.
+This error message is reserved for use by the protocol. For application errors use the data message. All errors are logged at the hop.
 
 ### Disconnected/Reconnect (5)
 
