@@ -4,7 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "../messageBuilder.h"
+#include "../Messages/messageBuilder.h"
 #include "../messageObjects.h"
 
 
