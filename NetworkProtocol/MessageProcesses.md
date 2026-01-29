@@ -55,16 +55,16 @@ receive(Message message)
 
 ### Processing the message
 
-The message is handled dependend on the message type. Command can be split into different packages to transmit larger data, so it has to be put back together at the receiver.
+The message is handled dependend on the message type. Data messages can be split into different packages to transmit larger data, so it has to be put back together at the receiver.
 
 ```
 processMessage(Message message)
   byte messageType = message.getType()
   switch messageType:
-    case command:
-      CommandMessage commandMessage;
-      if commandMessageBuilder.newCommandMessage(message, &commandMessage):
-        processCommand(commandMessage)
+    case data:
+      DataMessage dataMessage;
+      if dataMessageBuilder.newDataMessage(message, &dataMessage):
+        processData(dataMessage)
     ...
 ```
 
