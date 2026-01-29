@@ -1,8 +1,10 @@
 
-#include "../messageBuilder.h"
+#include "messageBuilder.h"
 
 #include <iostream>
 #include <ostream>
+
+#include "messageObjects.h"
 
 bool MessageBuilder::newCommandMessage(PartialCommandMessage *message, CommandMessage *result) {
 

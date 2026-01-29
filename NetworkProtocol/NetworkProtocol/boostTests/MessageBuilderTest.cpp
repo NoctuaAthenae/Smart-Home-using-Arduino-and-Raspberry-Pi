@@ -5,7 +5,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "../Messages/messageBuilder.h"
-#include "../messageObjects.h"
+#include "../Messages/messageObjects.h"
 
 
 BOOST_AUTO_TEST_SUITE(MessageBuilderTest)

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <map>
 
-#include "../messageObjects.h"
+#include "messageObjects.h"
 
 /**
  * Class for building command messages.
