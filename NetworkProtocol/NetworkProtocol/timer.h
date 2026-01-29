@@ -4,17 +4,17 @@
 
 
 class Timer {
-    /**
-     * Time the timer started.
-     */
-    uint32_t startTime;
 
     /**
      * Duration of the timer
      */
     uint16_t duration;
 
-    public:
+public:
+    /**
+     * Time the timer started.
+     */
+    uint32_t startTime;
 
     /**
      * Creates a new timer.

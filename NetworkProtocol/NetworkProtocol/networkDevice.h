@@ -9,6 +9,11 @@
 #include "timer.h"
 #include "Messages/messageObjects.h"
 
+typedef struct RegistrationPing {
+    uint8_t newDeviceID;
+    Timer timer;
+    uint32_t tempID;
+} RegistrationPing;
 
 class NetworkDevice {
     /**
@@ -57,6 +62,13 @@ class NetworkDevice {
      * Value: Timer for the ping.
      */
     std::map<uint8_t, Timer> pings;
+
+    /**
+     * This map holds the starting times of all active registration pings.
+     * Key: ID of the pinged node.
+     * Value: Timer for the ping.
+     */
+    std::vector<RegistrationPing> registrationPings;
 
     /**
      * IDs of the groups this device is part of.

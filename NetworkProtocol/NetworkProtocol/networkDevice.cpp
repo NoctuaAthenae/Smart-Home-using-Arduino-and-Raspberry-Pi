@@ -44,7 +44,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
     // TODO commands must set members got by receive method
 
     switch (message->getType()) {
-        case 0: {
+        case 0: {   // data message
             auto *dataMessage = dynamic_cast<DataMessage *>(message);
 
             // delete previous params and save the new
@@ -54,10 +54,10 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
             this->lastDataSize = dataMessage->contentSize;
             return true;
         }
-        case 1: {
+        case 1: {   // registration message
             auto *registrationMsg = dynamic_cast<RegistrationMessage *>(message);
             switch (registrationMsg->registrationType) {
-                case 0: {
+                case 0: {   // discovery
                     if (registrationMsg->extraField != 255) {
                         // Got an answer to own discovery
                         this->discovery->newAnswer(registrationMsg->newDeviceID, registrationMsg->extraField);
@@ -80,7 +80,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                     this->_sendInternal(registrationMsg);
                     break;
                 }
-                case 1: {
+                case 1: {   // registration request
                     // new device wants to register with this as a parent
                     if (registrationMsg->receiver != this->id) return false;
                     this->tempRoutingTable[registrationMsg->tempID] = 0;
@@ -90,10 +90,9 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
 
                     break;
                 }
-                case 2: {
+                case 2: {   // route creation
                     // new device as a descendant node
                     if (this->id == 0) {
-                        // TODO hub role
                         if (registrationMsg->newDeviceID == 0) {
                             // if the device id is not set, assign first free ID
                             RegistrationMessage answerMsg = RegistrationMessage(0, false,
@@ -111,7 +110,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
 
                             // if the device ID is set, hub has to ping id and wait for timeout, then accept
                             uint32_t time = this->_getTime();
-                            this->pings.at(registrationMsg->newDeviceID) = Timer(this->timeout).start(time);
+                            this->registrationPings.push_back({registrationMsg->newDeviceID, Timer(this->timeout).start(time), registrationMsg->tempID});
                             PingMessage pingMsg = PingMessage(registrationMsg->newDeviceID, false, false,
                                 time % 256, this->id, false, time);
                             this->_sendInternal(&pingMsg);
@@ -122,10 +121,10 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                     }
                     break;
                 }
-                case 3: {
+                case 3: {   // registration response
                     // registration of a device has been accepted or rejected
                     if (this->tempID == registrationMsg->tempID) {
-                        // this device is accepted
+                        // this device is accepted/rejected
                         if (!registrationMsg->extraField) {
                             return false;
                         }
@@ -148,7 +147,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
             }
             break;
         }
-        case 2: {
+        case 2: {   // ping message
             if (message->receiver != this->id) return false;
             auto *pingMsg = dynamic_cast<PingMessage *>(message);
             if (!pingMsg->isResponse) {
@@ -163,7 +162,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
             this->lastPingTime = this->_getTime() - pingMsg->timestamp;
             break;
         }
-        case 3: {
+        case 3: {   // add/remove to group message
             if (message->receiver != this->id) return false;
             auto *groupMsg = dynamic_cast<AddRemoveToGroupMessage *>(message);
             if (groupMsg->isAddToGroup) {
@@ -175,7 +174,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
 
             break;
         }
-        case 4: {
+        case 4: {   // error message
             if (this->id == 1) {
                 auto *errMsg = dynamic_cast<ErrorMessage *>(message);
                 this->_printError(errMsg->errorCode, errMsg->erroneousMessage);
@@ -185,7 +184,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
             _sendInternal(message);
             break;
         }
-        case 5: {
+        case 5: {   // disconnect message
             auto *connectionMsg = dynamic_cast<ReDisconnectMessage *>(message);
             if (connectionMsg->receiver == this->id) {
                 if (connectionMsg->isDisconnect) {
@@ -290,7 +289,18 @@ bool NetworkDevice::update() {
         }
     }
 
-    //TODO check for expired pings to accept device
+    auto time = this->_getTime();
+
+    for (auto ping : this->registrationPings) {
+        if (ping.timer.expired(time)) {
+            this->registrationPings.erase(std::remove(this->registrationPings.begin(), this->registrationPings.end(), ping),
+                this->registrationPings.end());
+
+            // The ping for an ID a device is trying to register with has timed out, so the device is accepted
+            RegistrationMessage answerMsg = RegistrationMessage(0, false, false, ping.newDeviceID, ping.tempID, 3, true);
+            this->_sendInternal(&answerMsg);
+        }
+    }
 
     if (!_messageAvailable()) return false;
 
@@ -306,7 +316,7 @@ bool NetworkDevice::update() {
             return this->_processMessage(message, sender);
         }
     } else {
-        // forward commands if this is not the receiver (including broadcasts)
+        // forward data messages if this is not the receiver (including broadcasts)
         if (message->getType() == 0 && message->receiver != this->id) {
             this->_sendInternal(message, sender);
             return false;
