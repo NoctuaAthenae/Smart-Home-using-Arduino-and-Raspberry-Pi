@@ -35,21 +35,21 @@ Message *Message::fromRawBytes(const uint8_t *rawPackage) {
             uint8_t newDeviceId = rawPackage[4];
             uint32_t id = 0;
             memcpy(&id, rawPackage + 5, 4);
-            return new RegistrationMessage(rawPackage[1], rawPackage[2], newDeviceId, id, rawPackage[3], static_cast<bool>(rawPackage[9]));
+            return new RegistrationMessage(rawPackage[1], newDeviceId, id, rawPackage[3], static_cast<bool>(rawPackage[9]));
         }
         case 2: {
             uint32_t timestamp = 0;
             memcpy(&timestamp, rawPackage + 6, 4);
-            return new PingMessage(rawPackage[1], rawPackage[2], rawPackage[4], rawPackage[3], rawPackage[5], timestamp);
+            return new PingMessage(rawPackage[1], rawPackage[4], rawPackage[3], rawPackage[5], timestamp);
         }
         case 3: {
-            return new AddRemoveToGroupMessage(rawPackage[1], rawPackage[2], rawPackage[4], rawPackage[3]);
+            return new AddRemoveToGroupMessage(rawPackage[1], rawPackage[4], rawPackage[3]);
         }
         case 4: {
-            return new ErrorMessage(rawPackage[1], rawPackage[2], rawPackage[3], rawPackage + 4);
+            return new ErrorMessage(rawPackage[1], rawPackage[3], rawPackage + 4);
         }
         case 5: {
-            return new ReDisconnectMessage(rawPackage[1], rawPackage[2], rawPackage[3]);
+            return new ReDisconnectMessage(rawPackage[1], rawPackage[3]);
         }
         default: {
             break;

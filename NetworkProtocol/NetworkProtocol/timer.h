@@ -17,17 +17,22 @@ public:
     uint32_t startTime;
 
     /**
+     * Default constructor for a timer.
+     */
+    Timer() : duration(0), startTime(0) {}
+
+    /**
      * Creates a new timer.
      * @param duration Duration of the timer.
      */
-    Timer(uint16_t duration) : startTime(0), duration(duration) {}
+    Timer(uint16_t duration) : duration(duration), startTime(0) {}
 
     /**
      * Creates a new timer and starts it.
      * @param duration Duration of the timer.
      * @param currentTime The current time.
      */
-    Timer(uint16_t duration, uint32_t currentTime) : startTime(currentTime), duration(duration) {}
+    Timer(uint16_t duration, uint32_t currentTime) : duration(duration), startTime(currentTime) {}
 
     /**
      * Starts the timer.

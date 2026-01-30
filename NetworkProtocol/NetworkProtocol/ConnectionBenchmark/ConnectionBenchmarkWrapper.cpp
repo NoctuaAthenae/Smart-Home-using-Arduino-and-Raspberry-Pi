@@ -19,7 +19,7 @@ bool ConnectionBenchmarkWrapper::update(uint32_t time, Message** msg) {
     }
 
     uint8_t id = (*this->devices)[this->currentDeviceIndex];
-    *msg = new PingMessage(id, false, false, time % 256, this->id, false, time);
+    *msg = new PingMessage(id, time % 256, this->id, false, time);
 
     if (++this->numberMessagesSent == this->numberMessages) {
         this->numberMessagesSent = 0;

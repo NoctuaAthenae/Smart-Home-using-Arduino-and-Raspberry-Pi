@@ -95,8 +95,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                     if (this->id == 0) {
                         if (registrationMsg->newDeviceID == 0 || this->routingTable.count(registrationMsg->newDeviceID) == 0) {
                             // if the device id is not set, assign first free ID
-                            RegistrationMessage answerMsg = RegistrationMessage(0, false,
-                                false, 0, registrationMsg->tempID, 3, false);
+                            RegistrationMessage answerMsg = RegistrationMessage(0, 0, registrationMsg->tempID, 3, false);
                             for (uint8_t i = 0; true; ++i) {
                                 if (this->routingTable.count(i) < 1) {
                                     answerMsg.receiver = i;
@@ -113,8 +112,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                             // the hub has to ping id and wait for timeout, then accept
                             uint32_t time = this->_getTime();
                             this->registrationPings.push_back({registrationMsg->newDeviceID, Timer(this->timeout).start(time), registrationMsg->tempID});
-                            PingMessage pingMsg = PingMessage(registrationMsg->newDeviceID, false, false,
-                                time % 256, this->id, false, time);
+                            PingMessage pingMsg = PingMessage(registrationMsg->newDeviceID, time % 256, this->id, false, time);
                             this->_sendInternal(&pingMsg);
                         }
                         this->tempRoutingTable[registrationMsg->tempID] = sender;
@@ -170,7 +168,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                 return false;
             }
 
-            this->pings[pingMsg->senderId].responseTime = Timer::elapsed(pingMsg->timestamp, this->_getTime());
+            this->pings[pingMsg->pingId].responseTime = Timer::elapsed(pingMsg->timestamp, this->_getTime());
 
 
             break;
@@ -252,7 +250,7 @@ bool NetworkDevice::registerDevice() {
 
     this->tempID = this->_getTime();
 
-    auto msg = new RegistrationMessage(foundParent, false, false, this->id, this->tempID, 1);
+    auto msg = new RegistrationMessage(foundParent, this->id, this->tempID, 1);
     this->_sendInternal(msg);
     delete msg;
     return true;
@@ -310,21 +308,24 @@ bool NetworkDevice::update() {
 
     // hub checks pending registration pings for timeouts
     // other devices do not add elements to the vector, so an if clause is not needed
-    for (auto ping : this->registrationPings) {
-        if (ping.timer.expired(time)) {
-            this->registrationPings.erase(std::remove(this->registrationPings.begin(), this->registrationPings.end(), ping),
-                this->registrationPings.end());
+    for (uint8_t i = 0; i < this->registrationPings.size(); ++i) {
+        auto ping = this->registrationPings[i];
+        if (!ping.timer.expired(time)) continue;
 
-            // The ping for an ID a device is trying to register with has timed out, so send a disconnect message on the old path
-            ReDisconnectMessage msg = ReDisconnectMessage(ping.newDeviceID, false, false, true);
-            this->_sendInternal(&msg);
-            // then update the routing table
-            this->routingTable[ping.newDeviceID] = this->tempRoutingTable[ping.tempID];
-            this->tempRoutingTable.erase(ping.tempID);
-            // and accept the registration request
-            RegistrationMessage answerMsg = RegistrationMessage(ping.newDeviceID, false, false, ping.newDeviceID, ping.tempID, 3, true);
-            this->_sendInternal(&answerMsg);
-        }
+        this->registrationPings.erase(find(this->registrationPings.begin(), this->registrationPings.end(), ping));
+
+        // The ping for an ID a device is trying to register with has timed out, so send a disconnect message on the old path
+        ReDisconnectMessage msg = ReDisconnectMessage(ping.newDeviceID, true);
+        this->_sendInternal(&msg);
+        // then update the routing table
+        this->routingTable[ping.newDeviceID] = this->tempRoutingTable[ping.tempID];
+        this->tempRoutingTable.erase(ping.tempID);
+        // and accept the registration request
+        RegistrationMessage answerMsg = RegistrationMessage(ping.newDeviceID, ping.newDeviceID, ping.tempID, 3, true);
+        this->_sendInternal(&answerMsg);
+
+        // index is changed after erase, so decrement i
+        --i;
     }
 
     if (!_messageAvailable()) return false;
@@ -370,7 +371,7 @@ uint16_t NetworkDevice::receive(uint8_t **data) {
 
 uint8_t NetworkDevice::ping(uint8_t targetID) {
     uint8_t pingID = this->_getMessageID();
-    PingMessage pingMsg = PingMessage(targetID, false, false, pingID, this->id, false, this->_getTime());
+    PingMessage pingMsg = PingMessage(targetID, pingID, this->id, false, this->_getTime());
     this->_sendInternal(&pingMsg);
     return pingID;
 }

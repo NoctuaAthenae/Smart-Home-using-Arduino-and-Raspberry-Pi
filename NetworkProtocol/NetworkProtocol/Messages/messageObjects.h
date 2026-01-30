@@ -280,30 +280,14 @@ public:
     /**
      * Constructor for a registration message.
      * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param newDeviceID ID of the new device.
-     * @param tempID Temporary ID.
-     * @param registrationType Registration type of this message.
-     * @param extraField Extra field depends of the registration type.
-     */
-    explicit RegistrationMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t newDeviceID,
-        uint32_t tempID, uint8_t registrationType, uint8_t extraField = 0)
-        : Message(receiver, typeAndGroups), tempID(tempID), newDeviceID(newDeviceID),
-        registrationType(registrationType), extraField(extraField) {}
-
-    /**
-     * Constructor for a registration message.
-     * @param receiver Receiver of this message.
-     * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
      * @param newDeviceID ID of the new device.
      * @param tempID Temporary ID for this device.
      * @param registrationType Registration type of this message.
      * @param extraField Extra field depends of the registration type.
      */
-    explicit RegistrationMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t newDeviceID,
+    explicit RegistrationMessage(uint8_t receiver, uint8_t newDeviceID,
         uint32_t tempID, uint8_t registrationType, uint8_t extraField = 0)
-        : Message(receiver, group, groupAscending), tempID(tempID), newDeviceID(newDeviceID),
+        : Message(receiver, false, false), tempID(tempID), newDeviceID(newDeviceID),
         registrationType(registrationType), extraField(extraField) {}
 
     /**
@@ -354,33 +338,15 @@ public:
  */
 class PingMessage : public Message {
 public:
-    /**
-    * Constructor for ping and ping and response messages.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param pingId ID of this ping.
-     * @param senderId Sender of this ping.
-     * @param isResponse Indicates whether this is a ping or a response to one.
-     * @param timestamp Timestamp of this message.
-     */
-    explicit PingMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t pingId, uint8_t senderId, bool isResponse, uint32_t timestamp)
-        : Message(receiver, typeAndGroups) {
-        this->pingId = pingId;
-        this->senderId = senderId;
-        this->isResponse = isResponse;
-        this->timestamp = timestamp;
-    }
 
     /**
     * Constructor for ping and ping and response messages.
      * @param receiver Receiver of this message.
-     * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
      * @param isResponse Indicates whether this is a ping or a response to one.
      * @param timestamp Timestamp of this message.
      */
-    explicit PingMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t pingId, uint8_t senderId, bool isResponse, uint32_t timestamp)
-        : Message(receiver, group, groupAscending) {
+    explicit PingMessage(uint8_t receiver, uint8_t pingId, uint8_t senderId, bool isResponse, uint32_t timestamp)
+        : Message(receiver, false, false) {
         this->pingId = pingId;
         this->senderId = senderId;
         this->isResponse = isResponse;
@@ -427,29 +393,15 @@ public:
  */
 class AddRemoveToGroupMessage : public Message {
 public:
-    /**
-     * Constructor for messages to add or remove devices to/from a group.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param groupId ID of the group.
-     * @param isAddToGroup True if the device has to be added to the given group, false if it has to be removed from it.
-     */
-    explicit AddRemoveToGroupMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t groupId, bool isAddToGroup)
-        : Message(receiver, typeAndGroups) {
-        this->groupId = groupId;
-        this->isAddToGroup = isAddToGroup;
-    }
 
     /**
      * Constructor for messages to add or remove devices to/from a group.
      * @param receiver Receiver of this message.
-     * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
      * @param groupId ID of the group.
      * @param isAddToGroup True if the device has to be added to the given group, false if it has to be removed from it.
      */
-    explicit AddRemoveToGroupMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t groupId, bool isAddToGroup)
-        : Message(receiver, group, groupAscending) {
+    explicit AddRemoveToGroupMessage(uint8_t receiver, uint8_t groupId, bool isAddToGroup)
+        : Message(receiver, false, false) {
         this->groupId = groupId;
         this->isAddToGroup = isAddToGroup;
     }
@@ -484,29 +436,15 @@ public:
  */
 class ErrorMessage : public Message {
 public:
-    /**
-     * Constructor for messages to add or remove devices to/from a group.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param errorCode Code of the occurred error.
-     * @param erroneousMessage The message that cause the error.
-     */
-    explicit ErrorMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t errorCode, const uint8_t* erroneousMessage)
-        : Message(receiver, typeAndGroups) {
-        this->errorCode = errorCode;
-        this->erroneousMessage = erroneousMessage;
-    }
 
     /**
      * Constructor for messages to add or remove devices to/from a group.
      * @param receiver Receiver of this message.
-     * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
      * @param errorCode Code of the occurred error.
      * @param erroneousMessage The message that cause the error.
      */
-    explicit ErrorMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t errorCode, const uint8_t* erroneousMessage)
-        : Message(receiver, group, groupAscending) {
+    explicit ErrorMessage(uint8_t receiver, uint8_t errorCode, const uint8_t* erroneousMessage)
+        : Message(receiver, false, false) {
         this->errorCode = errorCode;
         this->erroneousMessage = erroneousMessage;
     }
@@ -541,26 +479,14 @@ public:
  */
 class ReDisconnectMessage : public Message {
 public:
-    /**
-     * Constructor for messages to add or remove devices to/from a group.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param isDisconnect True if this message is a disconnect message, False if it is a reconnect message.
-     */
-    explicit ReDisconnectMessage(uint8_t receiver, uint8_t typeAndGroups, bool isDisconnect)
-        : Message(receiver, typeAndGroups) {
-        this->isDisconnect = isDisconnect;
-    }
 
     /**
      * Constructor for messages to add or remove devices to/from a group.
      * @param receiver Receiver of this message.
-     * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
      * @param isDisconnect True if this message is a disconnect message, False if it is a reconnect message.
      */
-    explicit ReDisconnectMessage(uint8_t receiver, bool group, bool groupAscending, bool isDisconnect)
-        : Message(receiver, group, groupAscending) {
+    explicit ReDisconnectMessage(uint8_t receiver, bool isDisconnect)
+        : Message(receiver, false, false) {
         this->isDisconnect = isDisconnect;
     }
 

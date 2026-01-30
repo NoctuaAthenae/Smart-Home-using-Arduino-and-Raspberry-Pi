@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(DataRawPackageTest) {
 BOOST_AUTO_TEST_CASE(RegisterRawPackageTempIdTest) {
     uint8_t id = std::rand() % 256;
     uint32_t tempId = std::rand();
-    RegistrationMessage msg = RegistrationMessage(id, false, false, id, tempId, 1);
+    RegistrationMessage msg = RegistrationMessage(id, id, tempId, 1);
 
     uint8_t *dataAddress[1];
     uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(RegisterRawPackageTempIdTest) {
 BOOST_AUTO_TEST_CASE(AcceptRejectTempIdRawPackageTest) {
     uint8_t id = std::rand() % 256;
     uint32_t tempId = std::rand();
-    RegistrationMessage msg = RegistrationMessage(0, false, false, id, tempId, 3, true);
+    RegistrationMessage msg = RegistrationMessage(0, id, tempId, 3, true);
 
     uint8_t *dataAddress[1];
     uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(PingRawPackageTest) {
     uint8_t pingID = std::rand() % 256;
     uint8_t senderID = std::rand() % 256;
     uint32_t timestamp = std::rand();
-    PingMessage msg = PingMessage(id, false, false, pingID, senderID, false, timestamp);
+    PingMessage msg = PingMessage(id, pingID, senderID, false, timestamp);
 
     uint8_t *dataAddress[1];
     uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE(RouteCreationRawPackageTest) {
     uint8_t id = std::rand() % 256;
     uint8_t newDeviceID = std::rand() % 256;
     uint32_t tempID = std::rand();
-    RegistrationMessage msg = RegistrationMessage(id, false, false, newDeviceID, tempID, 2);
+    RegistrationMessage msg = RegistrationMessage(id, newDeviceID, tempID, 2);
 
     uint8_t *dataAddress[1];
     uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE(RouteCreationRawPackageTest) {
 
 BOOST_AUTO_TEST_CASE(RouteCreationTempIDRawPackageTest) {
     uint32_t tempID = std::rand();
-    RegistrationMessage msg = RegistrationMessage(0, false, false, tempID, 2);
+    RegistrationMessage msg = RegistrationMessage(0, 0, tempID, 2);
 
     uint8_t *dataAddress[1];
     uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(RouteCreationTempIDRawPackageTest) {
 BOOST_AUTO_TEST_CASE(AddRemoveToGroupRawPackageTest) {
     uint8_t id = std::rand() % 256;
     uint8_t groupId = std::rand() % 256;
-    AddRemoveToGroupMessage msg = AddRemoveToGroupMessage(id, false, groupId, true);
+    AddRemoveToGroupMessage msg = AddRemoveToGroupMessage(id, groupId, true);
 
     uint8_t *dataAddress[1];
     uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE(ErrorRawPackageTest) {
         i = std::rand() % 256;
     }
 
-    ErrorMessage msg = ErrorMessage(id, false, false, errorCode, erroneousMessage);
+    ErrorMessage msg = ErrorMessage(id, errorCode, erroneousMessage);
 
     uint8_t *dataAddress[1];
     uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE(ErrorRawPackageTest) {
 BOOST_AUTO_TEST_CASE(DiscoverTempIDRawPackageTest) {
     uint8_t id = std::rand() % 256;
     uint32_t tempID = std::rand();
-    RegistrationMessage msg = RegistrationMessage(id, false, false, id, tempID, 0, true);
+    RegistrationMessage msg = RegistrationMessage(id, id, tempID, 0, true);
 
     uint8_t *dataAddress[1];
     uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(DiscoverTempIDRawPackageTest) {
 BOOST_AUTO_TEST_CASE(ReDisconnectRawPackageTest) {
     uint8_t id = std::rand() % 256;
     uint8_t groupId = std::rand() % 256;
-    ReDisconnectMessage msg = ReDisconnectMessage(id, false, groupId, true);
+    ReDisconnectMessage msg = ReDisconnectMessage(id, true);
 
     uint8_t *dataAddress[1];
     uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);

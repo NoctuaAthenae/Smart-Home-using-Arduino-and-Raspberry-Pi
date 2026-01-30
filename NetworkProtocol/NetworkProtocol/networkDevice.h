@@ -13,6 +13,10 @@ typedef struct RegistrationPing {
     uint8_t newDeviceID;
     Timer timer;
     uint32_t tempID;
+
+    bool operator==(const RegistrationPing &other) const {
+        return this->tempID == other.tempID && this->newDeviceID == other.newDeviceID;
+    }
 } RegistrationPing;
 
 typedef struct Ping {

@@ -5,7 +5,7 @@
 bool Discovery::update(uint32_t time, Message** msg) {
     if (this->pingFinished) return this->timer.expired(time);
 
-    *msg = new RegistrationMessage(this->nextDeviceToPing++, false, false, this->id, time, 0, time);
+    *msg = new RegistrationMessage(this->nextDeviceToPing++, this->id, time, 0, time);
 
     if (this->nextDeviceToPing == 255) {
         this->pingFinished = true;
