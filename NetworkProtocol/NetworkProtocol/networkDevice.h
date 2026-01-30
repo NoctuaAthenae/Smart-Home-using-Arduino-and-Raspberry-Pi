@@ -15,6 +15,11 @@ typedef struct RegistrationPing {
     uint32_t tempID;
 } RegistrationPing;
 
+typedef struct Ping {
+    Timer timer;
+    uint32_t responseTime;
+} Ping;
+
 class NetworkDevice {
     /**
      * ID of this device.
@@ -27,7 +32,7 @@ class NetworkDevice {
     uint8_t parent;
 
     /**
-     * ID for the next message sent by this device.
+     * ID for the next data or ping message sent by this device.
      */
     uint8_t nextID;
 
@@ -57,16 +62,14 @@ class NetworkDevice {
     std::map<uint32_t, uint8_t> tempRoutingTable;
 
     /**
-     * This map holds the starting times of all active pings.
-     * Key: ID of the pinged node.
-     * Value: Timer for the ping.
+     * This map holds the starting times of all active pings, that not have been queried yet.
+     * Key: ID of the ping.
+     * Value: Ping object.
      */
-    std::map<uint8_t, Timer> pings;
+    std::map<uint8_t, Ping> pings;
 
     /**
-     * This map holds the starting times of all active registration pings.
-     * Key: ID of the pinged node.
-     * Value: Timer for the ping.
+     * Vector of all registration pings sent by this device.
      */
     std::vector<RegistrationPing> registrationPings;
 
@@ -74,11 +77,6 @@ class NetworkDevice {
      * IDs of the groups this device is part of.
      */
     std::vector<uint8_t> groups;
-
-    /**
-     * Target of the last returned ping.
-     */
-    uint8_t lastPingTarget;
 
     /**
      * Size of the data array of the last message received.
@@ -89,11 +87,6 @@ class NetworkDevice {
      * Temporary ID of this device.
      */
     uint32_t tempID;
-
-    /**
-     * Round Trip Time of the last ping.
-     */
-    uint32_t lastPingTime;
 
     /**
      * Level of the hierarchy this device is at. Hub is zero.
@@ -146,6 +139,11 @@ class NetworkDevice {
      * @return True if it is a data message.
      */
     bool _processMessage(Message *message, uint8_t sender);
+
+    /**
+     * @return An ID for a new message.
+     */
+    uint8_t _getMessageID();
 
     /**
      * Checks if this device is in the given group.
@@ -213,8 +211,8 @@ public:
      * @param discoveryTimeout Timeout for discoveries of other devices.
      */
     explicit NetworkDevice(const uint8_t id, uint16_t discoveryTimeout = 1000) : id(id), parent(0), nextID(0),
-        registered(false), lastPingTarget(0), hierarchyLevel(0), benchmark_wrapper(nullptr),
-        lastDataSize(0), tempID(0), lastPingTime(0) {
+        registered(false), hierarchyLevel(0), benchmark_wrapper(nullptr),
+        lastDataSize(0), tempID(0) {
         this->children[0] = this->children[1] = this->children[2] = this->children[3] = 0;
         this->discovery = new Discovery(discoveryTimeout, id);
         this->lastData = new uint8_t[0];
@@ -251,6 +249,20 @@ public:
      * @return Size of the data.
      */
     uint16_t receive(uint8_t** data);
+
+    /**
+     * Sends a ping to the given device.
+     * @param targetID ID of the target of the ping.
+     * @return ID of the ping.
+     */
+    uint8_t ping(uint8_t targetID);
+
+    /**
+     * Checks if a ping has returned. Each response can only be fetched once.
+     * @param pingID ID of the ping.
+     * @return 0 if the ping has not returned yet, otherwise the round trip time of the ping.
+     */
+    uint32_t checkPing(uint8_t pingID);
 
 };
 
