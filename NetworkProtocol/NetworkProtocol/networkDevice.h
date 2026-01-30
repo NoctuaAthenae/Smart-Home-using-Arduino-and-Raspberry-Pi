@@ -121,12 +121,11 @@ class NetworkDevice {
      * Assembles a data message object and sends it.
      * @param receiver ID of the message's receiver/receiving group.
      * @param group True if the receiver is a group.
-     * @param groupAscending True if the message targeted to a group is still ascending.
      * @param data Data of the message.
      * @param dataSize Size of the data.
      * @return True if the message has been sent successfully.
      */
-    bool _assembleAndSend(uint8_t receiver, bool group, bool groupAscending, uint8_t* data, uint16_t dataSize);
+    bool _assembleAndSend(uint8_t receiver, bool group, uint8_t* data, uint16_t dataSize);
 
     /**
      * Sends the given message.

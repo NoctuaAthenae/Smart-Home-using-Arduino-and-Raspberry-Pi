@@ -38,7 +38,7 @@ bool MessageBuilder::newDataMessage(PartialDataMessage *message, DataMessage *re
     uint8_t size = SLOT_COUNT(this->numPackages.at(key));
 
     result->receiver = message->receiver;
-    result->typeAndGroups = message->typeAndGroups;
+    result->group = message->group;
     result->messageID = message->messageID;
     result->origin = message->origin;
     result->content = new uint8_t[size];

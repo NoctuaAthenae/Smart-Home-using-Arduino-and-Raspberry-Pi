@@ -31,15 +31,9 @@ public:
     uint8_t receiver;
 
     /**
-     * Saves the message type and group flags.
-     * 1 bit Group Flag
-     * 1 bit Group Ascending Flag
-     * 6 bit message type
-     * To get type: shift 2 to the right.
-     * Type is hardcoded in the message class.
-     * Type is still saved for received messages, but not used.
+     * True if this message is addressed to a group.
      */
-    uint8_t typeAndGroups;
+    bool group;
 
     /**
      * @return Type of this message.
@@ -49,26 +43,11 @@ public:
     };
 
     /**
-     * @return True, if this message is addressed to a group.
+     * Creates byte that encodes the message type and group flag.
+     * @return First bit indicates whether this message is addressed to a group.
+     * The other bits indicate the message type.
      */
-    bool isGroup();
-
-    /**
-     * @param set True, if this message is addressed to a group.
-     */
-    void setGroup(bool set);
-
-    /**
-     * Group messages ascend first to the hub before they wander down the tree.
-     * @return True, if this message is ascending to the hub.
-     */
-    bool isGroupAscending();
-
-    /**
-     * Group messages ascend first to the hub before they wander down the tree.
-     * @param set True, if this message is ascending to the hub.
-     */
-    void setGroupAscending(bool set);
+    uint8_t getGroupTypeByte();
 
     /**
      * Uses the given raw package to create a message object. The message object has to be deleted.
@@ -95,23 +74,12 @@ public:
     static void cleanUp(const uint8_t* packages);
 
     /**
-     * Base constructor for a received Message.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     */
-    Message(uint8_t receiver, uint8_t typeAndGroups) :
-        version(NETWORKPROTOCOL_VERSION), receiver(receiver), typeAndGroups(typeAndGroups) {}
-
-    /**
      * Base constructor for a new Message.
      * @param receiver Receiver of this message.
      * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
      */
-    Message(uint8_t receiver, bool group, bool groupAscending) :
-        version(NETWORKPROTOCOL_VERSION), receiver(receiver), typeAndGroups(0) {
-        setGroup(group);
-        setGroupAscending(groupAscending);
+    Message(uint8_t receiver, bool group) :
+        version(NETWORKPROTOCOL_VERSION), receiver(receiver), group(group) {
     }
 };
 
@@ -128,35 +96,21 @@ public:
     /**
      * Constructor for data messages.
      * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param messageID ID of the message.
-     * @param content Content of the message. Allocated on the heap. Is deleted when this message is deleted.
-     * @param contentSize Size of the content.
-     */
-    explicit DataMessage(uint8_t receiver, uint8_t typeAndGroups,
-        uint16_t messageID, uint8_t origin, uint8_t* content, uint16_t contentSize)
-        : Message(receiver, typeAndGroups),
-            messageID(messageID), origin(origin), content(content), contentSize(contentSize) {}
-
-    /**
-     * Constructor for data messages.
-     * @param receiver Receiver of this message.
      * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
      * @param messageID ID of the message.
      * @param origin Device that created the message.
      * @param content Content of the message. Allocated on the heap. Is deleted when this message is deleted.
      * @param contentSize Size of the content.
      */
-    explicit DataMessage(uint8_t receiver, bool group, bool groupAscending, uint16_t messageID, uint8_t origin,
+    explicit DataMessage(uint8_t receiver, bool group, uint16_t messageID, uint8_t origin,
         uint8_t* content, uint16_t contentSize)
-        : Message(receiver, group, groupAscending),
+        : Message(receiver, group),
         messageID(messageID), origin(origin), content(content), contentSize(contentSize) {}
 
     /**
      * Constructor for dummy data messages.
      */
-    explicit DataMessage() : Message(0, 0),
+    explicit DataMessage() : Message(0, false),
         messageID(0), origin(0), content(nullptr), contentSize(0) {}
 
     /**
@@ -200,34 +154,19 @@ public:
  */
 class PartialDataMessage : public Message {
 public:
-    /**
-     * Constructor for partial data messages.
-     * @param receiver Receiver of this message.
-     * @param typeAndGroups Message type and group flags.
-     * @param packageNumber Number of this package.
-     * @param messageID ID of the message.
-     * @param origin Device that created the message.
-     * @param content Content of the message.
-     */
-    explicit PartialDataMessage(uint8_t receiver, uint8_t typeAndGroups, uint8_t packageNumber,
-        uint16_t messageID, uint8_t origin, const uint8_t* content)
-        : Message(receiver, typeAndGroups), messageID(messageID), origin(origin), packageNumber(packageNumber) {
-        memcpy(this->content, content, DATA_SLOTS);
-    }
 
     /**
      * Constructor for partial data messages.
      * @param receiver Receiver of this message.
      * @param group Is the receiver a group.
-     * @param groupAscending Is the receiver ascending to the hub.
      * @param packageNumber Number of this package.
      * @param messageID ID of the message.
      * @param origin Device that created the message.
      * @param content Content of the message.
      */
-    explicit PartialDataMessage(uint8_t receiver, bool group, bool groupAscending, uint8_t packageNumber,
+    explicit PartialDataMessage(uint8_t receiver, bool group, uint8_t packageNumber,
         uint16_t messageID, uint8_t origin, const uint8_t* content)
-        : Message(receiver, group, groupAscending), messageID(messageID), origin(origin), packageNumber(packageNumber) {
+        : Message(receiver, group), messageID(messageID), origin(origin), packageNumber(packageNumber) {
         memcpy(this->content, content, DATA_SLOTS);
     }
 
@@ -287,7 +226,7 @@ public:
      */
     explicit RegistrationMessage(uint8_t receiver, uint8_t newDeviceID,
         uint32_t tempID, uint8_t registrationType, uint8_t extraField = 0)
-        : Message(receiver, false, false), tempID(tempID), newDeviceID(newDeviceID),
+        : Message(receiver, false), tempID(tempID), newDeviceID(newDeviceID),
         registrationType(registrationType), extraField(extraField) {}
 
     /**
@@ -346,7 +285,7 @@ public:
      * @param timestamp Timestamp of this message.
      */
     explicit PingMessage(uint8_t receiver, uint8_t pingId, uint8_t senderId, bool isResponse, uint32_t timestamp)
-        : Message(receiver, false, false) {
+        : Message(receiver, false) {
         this->pingId = pingId;
         this->senderId = senderId;
         this->isResponse = isResponse;
@@ -401,7 +340,7 @@ public:
      * @param isAddToGroup True if the device has to be added to the given group, false if it has to be removed from it.
      */
     explicit AddRemoveToGroupMessage(uint8_t receiver, uint8_t groupId, bool isAddToGroup)
-        : Message(receiver, false, false) {
+        : Message(receiver, false) {
         this->groupId = groupId;
         this->isAddToGroup = isAddToGroup;
     }
@@ -444,7 +383,7 @@ public:
      * @param erroneousMessage The message that cause the error.
      */
     explicit ErrorMessage(uint8_t receiver, uint8_t errorCode, const uint8_t* erroneousMessage)
-        : Message(receiver, false, false) {
+        : Message(receiver, false) {
         this->errorCode = errorCode;
         this->erroneousMessage = erroneousMessage;
     }
@@ -486,7 +425,7 @@ public:
      * @param isDisconnect True if this message is a disconnect message, False if it is a reconnect message.
      */
     explicit ReDisconnectMessage(uint8_t receiver, bool isDisconnect)
-        : Message(receiver, false, false) {
+        : Message(receiver, false) {
         this->isDisconnect = isDisconnect;
     }
 

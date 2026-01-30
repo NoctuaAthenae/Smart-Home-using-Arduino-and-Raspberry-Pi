@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(DataRawPackageTest) {
             content[i] = std::rand() % 256;
         }
 
-        DataMessage msg = DataMessage(id, false, false, messageId, origin, content, contentSizes[i]);
+        DataMessage msg = DataMessage(id, true, messageId, origin, content, contentSizes[i]);
 
         uint8_t *dataAddress[1];
         uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(DataRawPackageTest) {
 
             BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
             BOOST_CHECK_EQUAL(package[1], id);
-            BOOST_CHECK_EQUAL(package[2] / 4, 0);
+            BOOST_CHECK_EQUAL(package[2], 1);
             BOOST_CHECK_EQUAL(package[3], j);
             BOOST_CHECK_EQUAL(package[4], origin);
 
@@ -76,6 +76,7 @@ BOOST_AUTO_TEST_CASE(DataRawPackageTest) {
             BOOST_CHECK_EQUAL(createdMsg->messageID, messageId);
             BOOST_CHECK_EQUAL(createdMsg->getType(), 0);
             BOOST_CHECK_EQUAL(createdMsg->packageNumber, j);
+            BOOST_CHECK(createdMsg->group);
 
             if (j == 0) {
                 BOOST_CHECK_EQUAL(createdMsg->content[0], numberPackages[i]);
@@ -114,7 +115,7 @@ BOOST_AUTO_TEST_CASE(RegisterRawPackageTempIdTest) {
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
-    BOOST_CHECK_EQUAL(package[2] / 4, 1);
+    BOOST_CHECK_EQUAL(package[2] / 2, 1);
     BOOST_CHECK_EQUAL(package[3], 1);
     BOOST_CHECK_EQUAL(package[4], id);
 
@@ -152,7 +153,7 @@ BOOST_AUTO_TEST_CASE(AcceptRejectTempIdRawPackageTest) {
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], 0);
-    BOOST_CHECK_EQUAL(package[2] / 4, 1);
+    BOOST_CHECK_EQUAL(package[2] / 2, 1);
     BOOST_CHECK_EQUAL(package[3], 3);
     BOOST_CHECK_EQUAL(package[4], id);
 
@@ -195,7 +196,7 @@ BOOST_AUTO_TEST_CASE(PingRawPackageTest) {
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
-    BOOST_CHECK_EQUAL(package[2] / 4, 2);
+    BOOST_CHECK_EQUAL(package[2] / 2, 2);
     BOOST_CHECK_EQUAL(package[3], senderID);
     BOOST_CHECK_EQUAL(package[4], pingID);
     BOOST_CHECK(!package[5]);
@@ -236,7 +237,7 @@ BOOST_AUTO_TEST_CASE(RouteCreationRawPackageTest) {
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
-    BOOST_CHECK_EQUAL(package[2] / 4, 1);
+    BOOST_CHECK_EQUAL(package[2] / 2, 1);
     BOOST_CHECK_EQUAL(package[3], 2);
     BOOST_CHECK_EQUAL(package[4], newDeviceID);
 
@@ -273,7 +274,7 @@ BOOST_AUTO_TEST_CASE(RouteCreationTempIDRawPackageTest) {
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], 0);
-    BOOST_CHECK_EQUAL(package[2] / 4, 1);
+    BOOST_CHECK_EQUAL(package[2] / 2, 1);
     BOOST_CHECK_EQUAL(package[3], 2);
     BOOST_CHECK_EQUAL(package[4], 0);
 
@@ -312,7 +313,7 @@ BOOST_AUTO_TEST_CASE(AddRemoveToGroupRawPackageTest) {
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
-    BOOST_CHECK_EQUAL(package[2] / 4, 3);
+    BOOST_CHECK_EQUAL(package[2] / 2, 3);
     BOOST_CHECK(package[3]);
     BOOST_CHECK_EQUAL(package[4], groupId);
 
@@ -352,7 +353,7 @@ BOOST_AUTO_TEST_CASE(ErrorRawPackageTest) {
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
-    BOOST_CHECK_EQUAL(package[2] / 4, 4);
+    BOOST_CHECK_EQUAL(package[2] / 2, 4);
     BOOST_CHECK_EQUAL(package[3], errorCode);
 
     for (int i = 0; i < 28; ++i) {
@@ -390,7 +391,7 @@ BOOST_AUTO_TEST_CASE(DiscoverTempIDRawPackageTest) {
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
-    BOOST_CHECK_EQUAL(package[2] / 4, 1);
+    BOOST_CHECK_EQUAL(package[2] / 2, 1);
     BOOST_CHECK_EQUAL(package[3], 0);
     BOOST_CHECK_EQUAL(package[4], id);
 
@@ -431,7 +432,7 @@ BOOST_AUTO_TEST_CASE(ReDisconnectRawPackageTest) {
 
     BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
     BOOST_CHECK_EQUAL(package[1], id);
-    BOOST_CHECK_EQUAL(package[2] / 4, 5);
+    BOOST_CHECK_EQUAL(package[2] / 2, 5);
     BOOST_CHECK(package[3]);
 
 

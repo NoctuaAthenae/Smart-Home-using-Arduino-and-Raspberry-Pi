@@ -5,30 +5,20 @@
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define SET_BIT(var,pos,set) ((var) | (set<<(pos)))
 
-bool Message::isGroup() {
-    return CHECK_BIT(this->typeAndGroups, 0);
-}
-
-bool Message::isGroupAscending() {
-    return CHECK_BIT(this->typeAndGroups, 1);
-}
-
-void Message::setGroup(bool set) {
-    this->typeAndGroups = SET_BIT(this->typeAndGroups, 0, set);
-}
-
-void Message::setGroupAscending(bool set) {
-    this->typeAndGroups = SET_BIT(this->typeAndGroups, 1, set);
+uint8_t Message::getGroupTypeByte() {
+    uint8_t byte = this->getType() * 2;
+    byte = SET_BIT(byte, 0, this->group);
+    return byte;
 }
 
 Message *Message::fromRawBytes(const uint8_t *rawPackage) {
-    uint8_t type = rawPackage[2] >> 2;
+    uint8_t type = rawPackage[2] >> 1;
 
     switch (type) {
         case 0: {
             uint16_t id = 0;
             memcpy(&id, rawPackage + 5, 2);
-            return new PartialDataMessage(rawPackage[1], rawPackage[2], rawPackage[3], id,
+            return new PartialDataMessage(rawPackage[1], CHECK_BIT(rawPackage[2], 0), rawPackage[3], id,
                 rawPackage[4], rawPackage + METADATA_SLOTS);
         }
         case 1: {
@@ -62,11 +52,8 @@ uint8_t Message::getRawPackages(uint8_t** data) {
     auto *rawPackage = new uint8_t[32] {
         this->version,
         this->receiver,
-        this->typeAndGroups
+        this->getGroupTypeByte()
     };
-
-    // if smaller than 4, type is not set yet
-    if (this->typeAndGroups < 4) rawPackage[2] += this->getType() << 2;
 
     *data = rawPackage;
 

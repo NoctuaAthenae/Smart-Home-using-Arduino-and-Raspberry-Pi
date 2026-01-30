@@ -6,8 +6,8 @@
 
 #define DISCOVERY_CHANNEL 255
 
-bool NetworkDevice::_assembleAndSend(uint8_t receiver, bool group, bool groupAscending, uint8_t *data, uint16_t dataSize) {
-    auto message = DataMessage(receiver, group, groupAscending, this->_getMessageID(),
+bool NetworkDevice::_assembleAndSend(uint8_t receiver, bool group, uint8_t *data, uint16_t dataSize) {
+    auto message = DataMessage(receiver, group, this->_getMessageID(),
         this->id, data, dataSize);
 
     return this->_sendInternal(&message);
@@ -15,7 +15,7 @@ bool NetworkDevice::_assembleAndSend(uint8_t receiver, bool group, bool groupAsc
 
 bool NetworkDevice::_sendInternal(Message *message, uint8_t sender) {
 
-    if (!message->isGroup()) {
+    if (!message->group) {
         uint8_t nextHop = 0;
         if (this->routingTable.count(message->receiver) > 0) {
             nextHop = this->routingTable.at(message->receiver);
@@ -334,7 +334,7 @@ bool NetworkDevice::update() {
     uint8_t sender = this->_read(messageAddress);
     Message* message = *messageAddress;
 
-    if (message->isGroup()) {
+    if (message->group) {
         // group messages are always broadcasted
         this->_sendInternal(message, sender);
         // group message cannot contain messages that hops on the way need to process
@@ -357,11 +357,11 @@ bool NetworkDevice::update() {
 }
 
 bool NetworkDevice::send(uint8_t receiver, uint8_t *data, uint16_t dataSize) {
-    return this->_assembleAndSend(receiver, false, false, data, dataSize);
+    return this->_assembleAndSend(receiver, false, data, dataSize);
 }
 
 bool NetworkDevice::sendToGroup(uint8_t group, uint8_t *data, uint16_t dataSize) {
-    return this->_assembleAndSend(group, true, false, data, dataSize);
+    return this->_assembleAndSend(group, true, data, dataSize);
 }
 
 uint16_t NetworkDevice::receive(uint8_t **data) {

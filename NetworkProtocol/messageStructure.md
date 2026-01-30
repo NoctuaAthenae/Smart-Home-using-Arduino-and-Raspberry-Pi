@@ -15,11 +15,9 @@ Also groups can be created and assigned an ID, broadcast to the group ID are rec
 Each message consists of the following fields:
 - [0] 1 Byte: Version
 - [1] 1 Byte: Receiver
-- [2] 6 Bit: Message Type (max 64 message types)
+- [2] 7 Bit: Message Type (max 128 message types)
 <a name="GF"></a>
 - 1 Bit: Group flag (GF)
-<a name="GAF"></a>
-- 1 Bit: Group ascending flag (GAF)
 - Variable: Message Type specific fields
 - Total of 3 Bytes for the standard meta data
 
@@ -128,7 +126,7 @@ Each Node has a list with all children and via which children they are reachable
 
 ## Groups
 
-Endpoints can be parts of groups to benefit from group broadcasts. A group broadcast is sent with the [GF](#GF) and the [GAF](#GAF) flag set. While the GAF flag is set, all endpoints send the message to their parent. When the messages reaches the hub the GAF flag is reset and sent to all children. Each endpoint picks up the message and sends it to all own children.
+Endpoints can be parts of groups to benefit from group broadcasts. A group broadcast is sent with the [GF](#GF) flag set. All devices are part of the group 0, so a message to the group 0 is a broadcast to all devices. Group messages are sent to each neighbour (parent or child) except the one, where the message came from.
 
 ## Disconnects
 

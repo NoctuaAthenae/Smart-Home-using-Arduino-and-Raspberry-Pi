@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(MessageBuilderTest) {
             content[i] = std::rand() % 256;
         }
 
-        DataMessage msg = DataMessage(id, false, false, messageId, origin, content, contentSizes[i]);
+        DataMessage msg = DataMessage(id, false, messageId, origin, content, contentSizes[i]);
 
         uint8_t *dataAddress[1];
         uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
