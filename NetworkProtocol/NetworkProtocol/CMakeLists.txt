@@ -8,8 +8,6 @@ add_library(NetworkProtocol STATIC Messages/messageObjects.cpp
         Messages/messageBuilder.cpp
         networkDevice.cpp
         networkDevice.h
-        Discovery.cpp
-        Discovery.h
         ConnectionBenchmark/ConnectionBenchmark.cpp
         ConnectionBenchmark/ConnectionBenchmark.h
         ConnectionBenchmark/ConnectionBenchmarkWrapper.cpp

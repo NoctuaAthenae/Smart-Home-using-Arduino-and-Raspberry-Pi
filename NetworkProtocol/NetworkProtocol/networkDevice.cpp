@@ -57,29 +57,6 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
         case 1: {   // registration message
             auto *registrationMsg = dynamic_cast<RegistrationMessage *>(message);
             switch (registrationMsg->registrationType) {
-                case 0: {   // discovery
-                    if (registrationMsg->extraField != 255) {
-                        // Got an answer to own discovery
-                        this->discovery->newAnswer(registrationMsg->newDeviceID, registrationMsg->extraField);
-                        return false;
-                    }
-                    // Other device discovers
-                    uint8_t childSlot = 4;
-                    for (int i = 0; i < 4; ++i) {
-                        if (this->children[i] == 0) {
-                            childSlot = i;
-                            break;
-                        }
-                    }
-                    // cannot accept more children
-                    if (childSlot == 4) return false;
-
-                    // TODO figure out how to address discoveries
-                    registrationMsg->receiver = DISCOVERY_CHANNEL;
-                    registrationMsg->extraField = this->hierarchyLevel;
-                    this->_sendInternal(registrationMsg);
-                    break;
-                }
                 case 1: {   // registration request
                     // new device wants to register with this as a parent
                     if (registrationMsg->receiver != this->id) return false;
@@ -238,71 +215,15 @@ bool NetworkDevice::isInGroup(uint8_t group) {
 }
 
 bool NetworkDevice::registerDevice() {
-    uint8_t lowestLevel = 255;
-    uint8_t foundParent = 255;
-    for (auto pair: this->discovery->foundDevices) {
-        if (pair.second < lowestLevel) {
-            lowestLevel = pair.second;
-            foundParent = pair.first;
-        }
-    }
-    if (foundParent == 255) return false;
-
     this->tempID = this->_getTime();
 
-    auto msg = new RegistrationMessage(foundParent, this->id, this->tempID, 1);
+    auto msg = new RegistrationMessage(this->parent, this->id, this->tempID, 1);
     this->_sendInternal(msg);
     delete msg;
     return true;
 }
 
-void NetworkDevice::startBenchmark() {
-    // Check for a better connection with benchmarks
-
-    uint8_t numberDevices = this->discovery->foundDevices.size();
-
-    auto *devices = new uint8_t[numberDevices];
-
-    for (uint8_t i = 0; i < numberDevices; ++i) {
-        devices[i] = this->discovery->foundDevices[i].first;
-    }
-
-    this->benchmark_wrapper = new ConnectionBenchmarkWrapper(&devices, numberDevices, 50, 1000, this->_getTime(), this->id);
-
-}
-
 bool NetworkDevice::update() {
-
-    if (this->discovery != nullptr) {
-
-        Message* messageAddress[1];
-        *messageAddress = nullptr;
-        bool finished = this->discovery->update(this->_getTime(), messageAddress);
-        if (finished) {
-            if (this->registered) this->startBenchmark();
-            else this->registerDevice();
-
-            delete this->discovery;
-            this->discovery = nullptr;
-        } else if (*messageAddress != nullptr) {
-            this->_sendInternal(*messageAddress);
-            delete *messageAddress;
-        }
-    }
-
-    if (this->benchmark_wrapper != nullptr) {
-        Message* messageAddress[1];
-        *messageAddress = nullptr;
-        bool finished = this->benchmark_wrapper->update(this->_getTime(), messageAddress);
-        if (finished) {
-
-            delete this->benchmark_wrapper;
-            this->benchmark_wrapper = nullptr;
-        } else if (*messageAddress != nullptr) {
-            this->_sendInternal(*messageAddress);
-            delete *messageAddress;
-        }
-    }
 
     auto time = this->_getTime();
 

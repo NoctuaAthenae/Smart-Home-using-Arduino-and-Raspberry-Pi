@@ -4,8 +4,6 @@
 #include <map>
 #include <vector>
 
-#include "ConnectionBenchmark/ConnectionBenchmarkWrapper.h"
-#include "Discovery.h"
 #include "timer.h"
 #include "Messages/messageObjects.h"
 
@@ -101,16 +99,6 @@ class NetworkDevice {
      * Data of the last message received.
      */
     uint8_t *lastData {};
-
-    /**
-     * Represents an ongoing discovery.
-     */
-    Discovery* discovery{};
-
-    /**
-     * Wrapper for ongoing benchmarks.
-     */
-    ConnectionBenchmarkWrapper* benchmark_wrapper;
 
     /**
      * Timeout for timers.
@@ -211,13 +199,13 @@ public:
      * Initializes the data needed for a connection with the network.
      * Has to wait for a response before being able to send a message.
      * @param id ID of this device. If 0 it gets assigned an ID by the hub. If 1 this device is the hub.
-     * @param discoveryTimeout Timeout for discoveries of other devices.
+     * @param parent ID of the parent.
+     * @param timeout Timeout of timers in ms.
      */
-    explicit NetworkDevice(const uint8_t id, uint16_t discoveryTimeout = 1000) : id(id), parent(0), nextID(0),
-        registered(false), hierarchyLevel(0), benchmark_wrapper(nullptr),
-        lastDataSize(0), tempID(0) {
+    explicit NetworkDevice(const uint8_t id, uint8_t parent, uint16_t timeout) : id(id), parent(parent), nextID(0),
+        registered(false), lastDataSize(0),
+        tempID(0), hierarchyLevel(0), timeout(timeout) {
         this->children[0] = this->children[1] = this->children[2] = this->children[3] = 0;
-        this->discovery = new Discovery(discoveryTimeout, id);
         this->lastData = new uint8_t[0];
         this->groups.push_back(0);
     }
