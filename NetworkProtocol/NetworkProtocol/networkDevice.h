@@ -150,12 +150,6 @@ class NetworkDevice {
      */
     bool registerDevice();
 
-    /**
-     * Starts the benchmark of the devices found by discovery.
-     * Discovery pointer must not be null.
-     */
-    void startBenchmark();
-
 protected:
     /**
      * This method passes the message to the data link layer.
@@ -163,7 +157,7 @@ protected:
      * @param nextHop The next hop on the route.
      * @return True if the message has been sent successfully.
      */
-    virtual bool _write(Message *msg, uint8_t nextHop);
+    virtual bool _write(Message *msg, uint8_t nextHop) {return false;}
 
     /**
      * This method gets the message from the data link layer. Creates the message object on the heap
@@ -171,26 +165,26 @@ protected:
      * @param msg Message received.
      * @return The sender of the message.
      */
-    virtual uint8_t _read(Message **msg);
+    virtual uint8_t _read(Message **msg) {return 0;}
 
     /**
      * This method checks at the data link layer if there is a new message.
      * @return True if a new message is available.
      */
-    virtual bool _messageAvailable();
+    virtual bool _messageAvailable() {return false;}
 
     /**
      * This method returns the current time.
      * @return The current time.
      */
-    virtual uint32_t _getTime();
+    virtual uint32_t _getTime() {return 0;}
 
     /**
      * This method prints an error caused by the given message on a terminal.
      * @param errCode Error code.
      * @param msg Erroneous message.
      */
-    virtual void _printError(uint8_t errCode, const uint8_t *msg);
+    virtual void _printError(uint8_t errCode, const uint8_t *msg) {}
 
 public:
     virtual ~NetworkDevice() = default;
@@ -208,6 +202,8 @@ public:
         this->children[0] = this->children[1] = this->children[2] = this->children[3] = 0;
         this->lastData = new uint8_t[0];
         this->groups.push_back(0);
+
+        this->registerDevice();
     }
 
     /**

@@ -10,7 +10,7 @@ class NetworkHub : NetworkDevice {
      * Initializes the hub of the network.
      * @param pingTimeout Timeout for ping of other devices while registration of a new device.
      */
-    explicit NetworkHub(uint16_t pingTimeout) : NetworkDevice(0, pingTimeout) {}
+    explicit NetworkHub(uint16_t pingTimeout) : NetworkDevice(0, 0, pingTimeout) {}
 };
 
 

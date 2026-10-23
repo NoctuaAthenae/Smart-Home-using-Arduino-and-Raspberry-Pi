@@ -4,8 +4,6 @@
 
 #include "Messages/messageObjects.h"
 
-#define DISCOVERY_CHANNEL 255
-
 bool NetworkDevice::_assembleAndSend(uint8_t receiver, bool group, uint8_t *data, uint16_t dataSize) {
     auto message = DataMessage(receiver, group, this->_getMessageID(),
         this->id, data, dataSize);
