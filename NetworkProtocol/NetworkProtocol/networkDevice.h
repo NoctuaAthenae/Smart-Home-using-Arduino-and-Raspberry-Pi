@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "timer.h"
+#include "Messages/messageBuilder.h"
 #include "Messages/messageObjects.h"
 
 typedef struct RegistrationPing {
@@ -106,6 +107,11 @@ class NetworkDevice {
     uint16_t timeout;
 
     /**
+     * Message Builder that reassembles received messages.
+     */
+    MessageBuilder message_builder;
+
+    /**
      * Assembles a data message object and sends it.
      * @param receiver ID of the message's receiver/receiving group.
      * @param group True if the receiver is a group.
@@ -121,7 +127,15 @@ class NetworkDevice {
      * @param sender Sender of the message, if it has been received.
      * @return True if the message has been sent successfully.
      */
-    bool _sendInternal(Message *message, uint8_t sender = 0);
+    bool _routeAndSend(Message *message, uint8_t sender = 0);
+
+    /**
+     * Converts message to raw bytes and sends all created packages.
+    * @param message The message to be sent.
+     * @param nextHop The next hop on the route.
+     * @return True if all messages has been sent successfully.
+     */
+    bool _sendInternal(Message *message, uint8_t nextHop = 0);
 
     /**
      * Processes the received message.
@@ -153,19 +167,19 @@ class NetworkDevice {
 protected:
     /**
      * This method passes the message to the data link layer.
-     * @param msg Message to be sent.
+     * @param rawPackage Package to be sent.
      * @param nextHop The next hop on the route.
      * @return True if the message has been sent successfully.
      */
-    virtual bool _write(Message *msg, uint8_t nextHop) {return false;}
+    virtual bool _write(uint8_t *rawPackage, uint8_t nextHop) {return false;}
 
     /**
      * This method gets the message from the data link layer. Creates the message object on the heap
      * and writes the address of it into the pointer given.
-     * @param msg Message received.
+     * @param rawPackage Package received.
      * @return The sender of the message.
      */
-    virtual uint8_t _read(Message **msg) {return 0;}
+    virtual uint8_t _read(uint8_t **rawPackage) {return 0;}
 
     /**
      * This method checks at the data link layer if there is a new message.

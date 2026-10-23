@@ -8,10 +8,10 @@ bool NetworkDevice::_assembleAndSend(uint8_t receiver, bool group, uint8_t *data
     auto message = DataMessage(receiver, group, this->_getMessageID(),
         this->id, data, dataSize);
 
-    return this->_sendInternal(&message);
+    return this->_routeAndSend(&message);
 }
 
-bool NetworkDevice::_sendInternal(Message *message, uint8_t sender) {
+bool NetworkDevice::_routeAndSend(Message *message, uint8_t sender) {
 
     if (!message->group) {
         uint8_t nextHop = 0;
@@ -20,7 +20,7 @@ bool NetworkDevice::_sendInternal(Message *message, uint8_t sender) {
         } else {
             nextHop = this->parent;
         }
-        return this->_write(message, nextHop);
+        return this->_sendInternal(message, nextHop);
     }
 
 
@@ -28,14 +28,25 @@ bool NetworkDevice::_sendInternal(Message *message, uint8_t sender) {
 
     // group messages are sent to all children and parent, that is not the sender
     for (const uint8_t i : this->children) {
-        if (i != 0 && i != sender && !_write(message, i)) {
+        if (i != 0 && i != sender && !_sendInternal(message, i)) {
             sendingSuccessful = false;
         }
     }
-    if (this->parent != sender && !_write(message, this->parent)) {
+    if (this->parent != sender && !_sendInternal(message, this->parent)) {
         sendingSuccessful = false;
     }
     return sendingSuccessful;
+}
+
+bool NetworkDevice::_sendInternal(Message *message, uint8_t nextHop) {
+    uint8_t* packages[1];
+    message->getRawPackages(packages);
+    for (auto package : packages) {
+        if (!this->_write(package, nextHop)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
@@ -43,13 +54,16 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
 
     switch (message->getType()) {
         case 0: {   // data message
-            auto *dataMessage = dynamic_cast<DataMessage *>(message);
+            auto *dataMessage = dynamic_cast<PartialDataMessage *>(message);
+
+            DataMessage result[1];
+            if (!this->message_builder.newDataMessage(dataMessage, result)) return false;
 
             // delete previous params and save the new
             delete this->lastData;
-            this->lastData = new uint8_t[dataMessage->contentSize];
-            memcpy(this->lastData, dataMessage->content, dataMessage->contentSize);
-            this->lastDataSize = dataMessage->contentSize;
+            this->lastData = new uint8_t[result->contentSize];
+            memcpy(this->lastData, result->content, result->contentSize);
+            this->lastDataSize = result->contentSize;
             return true;
         }
         case 1: {   // registration message
@@ -61,7 +75,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                     this->tempRoutingTable[registrationMsg->tempID] = 0;
                     registrationMsg->receiver = 0;
                     registrationMsg->registrationType = 2;
-                    this->_sendInternal(registrationMsg);
+                    this->_routeAndSend(registrationMsg);
 
                     break;
                 }
@@ -80,7 +94,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                                 }
                                 if (i == 255) break;
                             }
-                            this->_sendInternal(&answerMsg);
+                            this->_routeAndSend(&answerMsg);
                         } else {
 
                             // if the device ID is set and there is a device with the ID already in the routing table,
@@ -88,12 +102,12 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                             uint32_t time = this->_getTime();
                             this->registrationPings.push_back({registrationMsg->newDeviceID, Timer(this->timeout).start(time), registrationMsg->tempID});
                             PingMessage pingMsg = PingMessage(registrationMsg->newDeviceID, time % 256, this->id, false, time);
-                            this->_sendInternal(&pingMsg);
+                            this->_routeAndSend(&pingMsg);
                         }
                         this->tempRoutingTable[registrationMsg->tempID] = sender;
                     } else {
                         this->tempRoutingTable[registrationMsg->tempID] = sender;
-                        this->_sendInternal(registrationMsg);
+                        this->_routeAndSend(registrationMsg);
                     }
                     break;
                 }
@@ -117,7 +131,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                     this->routingTable[registrationMsg->newDeviceID] = this->tempRoutingTable[registrationMsg->tempID];
                     this->tempRoutingTable.erase(registrationMsg->tempID);
 
-                    this->_sendInternal(registrationMsg);
+                    this->_routeAndSend(registrationMsg);
 
                     // if the device was rejected, restore the old path
                     if (!registrationMsg->extraField) {
@@ -139,7 +153,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                 pingMsg->isResponse = true;
                 pingMsg->receiver = pingMsg->senderId;
                 pingMsg->senderId = this->id;
-                this->_sendInternal(pingMsg);
+                this->_routeAndSend(pingMsg);
                 return false;
             }
 
@@ -167,7 +181,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                 return false;
             }
 
-            _sendInternal(message);
+            _routeAndSend(message);
             break;
         }
         case 5: {   // disconnect message
@@ -181,7 +195,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
 
             if (connectionMsg->isDisconnect) {
                 this->routingTable.erase(connectionMsg->receiver);
-                this->_sendInternal(connectionMsg);
+                this->_routeAndSend(connectionMsg);
                 return false;
             }
 
@@ -191,7 +205,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                 connectionMsg->isDisconnect = true;
             }
             // send the message on the old path, before updating the path
-            this->_sendInternal(connectionMsg);
+            this->_routeAndSend(connectionMsg);
             this->routingTable[connectionMsg->receiver] = sender;
             break;
         }
@@ -216,7 +230,7 @@ bool NetworkDevice::registerDevice() {
     this->tempID = this->_getTime();
 
     auto msg = new RegistrationMessage(this->parent, this->id, this->tempID, 1);
-    this->_sendInternal(msg);
+    this->_routeAndSend(msg);
     delete msg;
     return true;
 }
@@ -235,13 +249,13 @@ bool NetworkDevice::update() {
 
         // The ping for an ID a device is trying to register with has timed out, so send a disconnect message on the old path
         ReDisconnectMessage msg = ReDisconnectMessage(ping.newDeviceID, true);
-        this->_sendInternal(&msg);
+        this->_routeAndSend(&msg);
         // then update the routing table
         this->routingTable[ping.newDeviceID] = this->tempRoutingTable[ping.tempID];
         this->tempRoutingTable.erase(ping.tempID);
         // and accept the registration request
         RegistrationMessage answerMsg = RegistrationMessage(ping.newDeviceID, ping.newDeviceID, ping.tempID, 3, true);
-        this->_sendInternal(&answerMsg);
+        this->_routeAndSend(&answerMsg);
 
         // index is changed after erase, so decrement i
         --i;
@@ -249,13 +263,14 @@ bool NetworkDevice::update() {
 
     if (!_messageAvailable()) return false;
 
-    Message* messageAddress[1];
+    uint8_t* messageAddress[1];
     uint8_t sender = this->_read(messageAddress);
-    Message* message = *messageAddress;
+    Message* message = Message::fromRawBytes(*messageAddress);
+
 
     if (message->group) {
         // group messages are always broadcasted
-        this->_sendInternal(message, sender);
+        this->_routeAndSend(message, sender);
         // group message cannot contain messages that hops on the way need to process
         if (this->isInGroup(message->receiver)) {
             return this->_processMessage(message, sender);
@@ -263,7 +278,7 @@ bool NetworkDevice::update() {
     } else {
         // forward data messages if this is not the receiver (including broadcasts)
         if (message->getType() == 0 && message->receiver != this->id) {
-            this->_sendInternal(message, sender);
+            this->_routeAndSend(message, sender);
             return false;
         }
         // message might contain info this device needs even if device is not the receiver
@@ -291,7 +306,7 @@ uint16_t NetworkDevice::receive(uint8_t **data) {
 uint8_t NetworkDevice::ping(uint8_t targetID) {
     uint8_t pingID = this->_getMessageID();
     PingMessage pingMsg = PingMessage(targetID, pingID, this->id, false, this->_getTime());
-    this->_sendInternal(&pingMsg);
+    this->_routeAndSend(&pingMsg);
     return pingID;
 }
 
