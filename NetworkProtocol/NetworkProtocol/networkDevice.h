@@ -132,10 +132,11 @@ class NetworkDevice {
     /**
      * Converts message to raw bytes and sends all created packages.
     * @param message The message to be sent.
-     * @param nextHop The next hop on the route.
+     * @param nextHop The next hop on the route. If broadcast is set, this neighbour is ignored.
+     * @param broadcast Should the message be sent to all neighbours.
      * @return True if all messages has been sent successfully.
      */
-    bool _sendInternal(Message *message, uint8_t nextHop = 0);
+    bool _sendInternal(Message *message, uint8_t nextHop = 0, bool broadcast = false);
 
     /**
      * Processes the received message.
@@ -158,11 +159,11 @@ class NetworkDevice {
     bool isInGroup(uint8_t group);
 
     /**
-     * Registers the device with the discovered device at the lowest hierarchy level.
-     * Discovery pointer must not be null.
-     * @return True, if a parent has been found, false if not.
+     *
+     * @param registrationMsg
+     * @param sender
      */
-    bool registerDevice();
+    void _hubNewDevice(RegistrationMessage *registrationMsg, uint8_t sender);
 
 protected:
     /**
@@ -172,6 +173,14 @@ protected:
      * @return True if the message has been sent successfully.
      */
     virtual bool _write(uint8_t *rawPackage, uint8_t nextHop) {return false;}
+
+    /**
+     * Passes the message to the data link layer and sends to all neighbours.
+     * @param rawPackage Package to be sent.
+     * @param exclude Exclude a neighbour.
+     * @return True if the message has been sent successfully.
+     */
+    virtual bool _broadcastToNeighbours(uint8_t *rawPackage, uint8_t exclude) {return false;}
 
     /**
      * This method gets the message from the data link layer. Creates the message object on the heap
@@ -205,19 +214,17 @@ public:
 
     /**
      * Initializes the data needed for a connection with the network.
-     * Has to wait for a response before being able to send a message.
+     * Has to call registerDevice to connect to a parent.
      * @param id ID of this device. If 0 it gets assigned an ID by the hub. If 1 this device is the hub.
      * @param parent ID of the parent.
      * @param timeout Timeout of timers in ms.
      */
     explicit NetworkDevice(const uint8_t id, uint8_t parent, uint16_t timeout) : id(id), parent(parent), nextID(0),
-        registered(false), lastDataSize(0),
+        registered(id == 0), lastDataSize(0),
         tempID(0), hierarchyLevel(0), timeout(timeout) {
         this->children[0] = this->children[1] = this->children[2] = this->children[3] = 0;
         this->lastData = new uint8_t[0];
         this->groups.push_back(0);
-
-        this->registerDevice();
     }
 
     /**
@@ -264,6 +271,18 @@ public:
      * @return 0 if the ping has not returned yet, otherwise the round trip time of the ping.
      */
     uint32_t checkPing(uint8_t pingID);
+
+    /**
+     * Registers the device with the set parent.
+     * Has to wait until registered to sent messages.
+     */
+    void registerDevice();
+
+    /**
+     * Checks if the device is registered with a parent.
+     * @return True if this device is registered with a parent.
+     */
+    bool isRegistered();
 
 };
 

@@ -1,6 +1,7 @@
 #include "networkDevice.h"
 
 #include <algorithm>
+#include <csignal>
 
 #include "Messages/messageObjects.h"
 
@@ -18,32 +19,37 @@ bool NetworkDevice::_routeAndSend(Message *message, uint8_t sender) {
         if (this->routingTable.count(message->receiver) > 0) {
             nextHop = this->routingTable.at(message->receiver);
         } else {
+            if (message->getType() == 1) {
+                auto *registrationMsg = dynamic_cast<RegistrationMessage *>(message);
+                if (registrationMsg->registrationType == 3 && this->tempRoutingTable.count(registrationMsg->tempID) > 0) {
+                    nextHop = this->tempRoutingTable.at(registrationMsg->tempID);
+                    if (nextHop == 0) {
+                        // one above new endpoint
+                        return this->_sendInternal(message, sender, true);
+                    }
+                    return this->_sendInternal(message, nextHop);
+                }
+            }
             nextHop = this->parent;
         }
         return this->_sendInternal(message, nextHop);
     }
 
-
-    bool sendingSuccessful = true;
-
-    // group messages are sent to all children and parent, that is not the sender
-    for (const uint8_t i : this->children) {
-        if (i != 0 && i != sender && !_sendInternal(message, i)) {
-            sendingSuccessful = false;
-        }
-    }
-    if (this->parent != sender && !_sendInternal(message, this->parent)) {
-        sendingSuccessful = false;
-    }
-    return sendingSuccessful;
+    return this->_sendInternal(message, sender, true);
 }
 
-bool NetworkDevice::_sendInternal(Message *message, uint8_t nextHop) {
+bool NetworkDevice::_sendInternal(Message *message, uint8_t nextHop, bool broadcast) {
     uint8_t* packages[1];
     message->getRawPackages(packages);
     for (auto package : packages) {
-        if (!this->_write(package, nextHop)) {
-            return false;
+        if (broadcast) {
+            if (!this->_broadcastToNeighbours(package, nextHop)) {
+                return false;
+            }
+        } else {
+            if (!this->_write(package, nextHop)) {
+                return false;
+            }
         }
     }
     return true;
@@ -54,6 +60,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
 
     switch (message->getType()) {
         case 0: {   // data message
+            if (!this->isRegistered()) return false;
             auto *dataMessage = dynamic_cast<PartialDataMessage *>(message);
 
             DataMessage result[1];
@@ -71,42 +78,27 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
             switch (registrationMsg->registrationType) {
                 case 1: {   // registration request
                     // new device wants to register with this as a parent
+                    if (!this->isRegistered()) return false;
                     if (registrationMsg->receiver != this->id) return false;
+
                     this->tempRoutingTable[registrationMsg->tempID] = 0;
-                    registrationMsg->receiver = 0;
-                    registrationMsg->registrationType = 2;
-                    this->_routeAndSend(registrationMsg);
+                    if (this->id == 0) {
+                        this->_hubNewDevice(registrationMsg, sender);
+                    } else {
+                        registrationMsg->receiver = 0;
+                        registrationMsg->registrationType = 2;
+                        this->_routeAndSend(registrationMsg);
+                    }
 
                     break;
                 }
                 case 2: {   // route creation
                     // new device as a descendant node
+                    if (!this->isRegistered()) return false;
+                    this->tempRoutingTable[registrationMsg->tempID] = sender;
                     if (this->id == 0) {
-                        if (registrationMsg->newDeviceID == 0 || this->routingTable.count(registrationMsg->newDeviceID) == 0) {
-                            // if the device id is not set, assign first free ID
-                            RegistrationMessage answerMsg = RegistrationMessage(0, 0, registrationMsg->tempID, 3, false);
-                            for (uint8_t i = 0; true; ++i) {
-                                if (this->routingTable.count(i) < 1) {
-                                    answerMsg.receiver = i;
-                                    answerMsg.newDeviceID = i;
-                                    answerMsg.extraField = true;
-                                    break;
-                                }
-                                if (i == 255) break;
-                            }
-                            this->_routeAndSend(&answerMsg);
-                        } else {
-
-                            // if the device ID is set and there is a device with the ID already in the routing table,
-                            // the hub has to ping id and wait for timeout, then accept
-                            uint32_t time = this->_getTime();
-                            this->registrationPings.push_back({registrationMsg->newDeviceID, Timer(this->timeout).start(time), registrationMsg->tempID});
-                            PingMessage pingMsg = PingMessage(registrationMsg->newDeviceID, time % 256, this->id, false, time);
-                            this->_routeAndSend(&pingMsg);
-                        }
-                        this->tempRoutingTable[registrationMsg->tempID] = sender;
+                        this->_hubNewDevice(registrationMsg, sender);
                     } else {
-                        this->tempRoutingTable[registrationMsg->tempID] = sender;
                         this->_routeAndSend(registrationMsg);
                     }
                     break;
@@ -123,15 +115,23 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                         return false;
                     }
 
+                    if (this->tempRoutingTable.find(registrationMsg->tempID) == this->tempRoutingTable.end())
+                        return false;
+
+                    // TODO is temporally updating the routing table necessary?
                     // temporarily update the routing table to the new path
                     uint8_t originalNextHop = 0;
                     bool routeExists = this->routingTable.find(registrationMsg->newDeviceID) != this->routingTable.end();
                     if (routeExists) originalNextHop = this->routingTable[registrationMsg->newDeviceID];
 
-                    this->routingTable[registrationMsg->newDeviceID] = this->tempRoutingTable[registrationMsg->tempID];
-                    this->tempRoutingTable.erase(registrationMsg->tempID);
+                    this->_routeAndSend(registrationMsg, sender);
 
-                    this->_routeAndSend(registrationMsg);
+                    if (this->tempRoutingTable[registrationMsg->tempID] == 0) {
+                        this->routingTable[registrationMsg->newDeviceID] = registrationMsg->newDeviceID;
+                    } else {
+                        this->routingTable[registrationMsg->newDeviceID] = this->tempRoutingTable[registrationMsg->tempID];
+                    }
+                    this->tempRoutingTable.erase(registrationMsg->tempID);
 
                     // if the device was rejected, restore the old path
                     if (!registrationMsg->extraField) {
@@ -147,6 +147,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
             break;
         }
         case 2: {   // ping message
+            if (!this->isRegistered()) return false;
             if (message->receiver != this->id) return false;
             auto *pingMsg = dynamic_cast<PingMessage *>(message);
             if (!pingMsg->isResponse) {
@@ -163,6 +164,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
             break;
         }
         case 3: {   // add/remove to group message
+            if (!this->isRegistered()) return false;
             if (message->receiver != this->id) return false;
             auto *groupMsg = dynamic_cast<AddRemoveToGroupMessage *>(message);
             if (groupMsg->isAddToGroup) {
@@ -175,6 +177,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
             break;
         }
         case 4: {   // error message
+            if (!this->isRegistered()) return false;
             if (this->id == 1) {
                 auto *errMsg = dynamic_cast<ErrorMessage *>(message);
                 this->_printError(errMsg->errorCode, errMsg->erroneousMessage);
@@ -185,6 +188,7 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
             break;
         }
         case 5: {   // disconnect message
+            if (!this->isRegistered()) return false;
             auto *connectionMsg = dynamic_cast<ReDisconnectMessage *>(message);
             if (connectionMsg->receiver == this->id) {
                 if (connectionMsg->isDisconnect) {
@@ -226,13 +230,46 @@ bool NetworkDevice::isInGroup(uint8_t group) {
     return false;
 }
 
-bool NetworkDevice::registerDevice() {
+void NetworkDevice::_hubNewDevice(RegistrationMessage *registrationMsg, uint8_t sender) {
+    if (registrationMsg->newDeviceID == 0) {
+        // if the device id is not set, assign first free ID
+        RegistrationMessage answerMsg = RegistrationMessage(0, 0, registrationMsg->tempID, 3, true);
+        for (uint8_t i = 0; true; ++i) {
+            if (this->routingTable.count(i) < 1) {
+                answerMsg.receiver = i;
+                answerMsg.newDeviceID = i;
+                answerMsg.extraField = true;
+                break;
+            }
+            if (i == 255) break;
+        }
+        this->_routeAndSend(&answerMsg);
+    } else if (this->routingTable.count(registrationMsg->newDeviceID) == 0) {
+        RegistrationMessage answerMsg = RegistrationMessage(0, registrationMsg->newDeviceID, registrationMsg->tempID, 3, true);
+        this->_routeAndSend(&answerMsg);
+    } else {
+
+        // if the device ID is set and there is a device with the ID already in the routing table,
+        // the hub has to ping id and wait for timeout, then accept
+        uint32_t time = this->_getTime();
+        this->registrationPings.push_back({registrationMsg->newDeviceID, Timer(this->timeout).start(time), registrationMsg->tempID});
+        PingMessage pingMsg = PingMessage(registrationMsg->newDeviceID, time % 256, this->id, false, time);
+        this->_routeAndSend(&pingMsg);
+    }
+}
+
+void NetworkDevice::registerDevice() {
+    if (this->id == 0)
+        throw std::bad_function_call();
     this->tempID = this->_getTime();
 
     auto msg = new RegistrationMessage(this->parent, this->id, this->tempID, 1);
     this->_routeAndSend(msg);
     delete msg;
-    return true;
+}
+
+bool NetworkDevice::isRegistered() {
+    return this->registered;
 }
 
 bool NetworkDevice::update() {
@@ -291,10 +328,12 @@ bool NetworkDevice::update() {
 }
 
 bool NetworkDevice::send(uint8_t receiver, uint8_t *data, uint16_t dataSize) {
+    if (!this->isRegistered()) return false;
     return this->_assembleAndSend(receiver, false, data, dataSize);
 }
 
 bool NetworkDevice::sendToGroup(uint8_t group, uint8_t *data, uint16_t dataSize) {
+    if (!this->isRegistered()) return false;
     return this->_assembleAndSend(group, true, data, dataSize);
 }
 
