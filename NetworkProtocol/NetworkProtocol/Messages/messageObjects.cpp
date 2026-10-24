@@ -2,6 +2,8 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
+#include <ostream>
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define SET_BIT(var,pos,set) ((var) | (set<<(pos)))
 
@@ -114,6 +116,15 @@ uint8_t DataMessage::getRawPackages(uint8_t** data) {
     cleanUp(templatePackage);
 
     return numberPackages;
+}
+
+uint8_t PartialDataMessage::getRawPackages(uint8_t **data) {
+    Message::getRawPackages(data);
+    (*data)[3] = this->packageNumber;
+    (*data)[4] = this->origin;
+    memcpy((*data) + 5, &this->messageID, 2);
+    memcpy((*data) + METADATA_SLOTS, this->content, DATA_SLOTS);
+    return 1;
 }
 
 uint8_t RegistrationMessage::getRawPackages(uint8_t** data) {

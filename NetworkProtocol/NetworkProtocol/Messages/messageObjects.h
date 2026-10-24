@@ -89,9 +89,6 @@ public:
  */
 class DataMessage : public Message {
 public:
-    ~DataMessage() override {
-        delete[] content;
-    };
 
     /**
      * Constructor for data messages.
@@ -197,9 +194,7 @@ public:
      * @param data Pointer to an array of pointer. Data is allocated on the heap. Free with the cleanUp method.
      * @return Number of raw packages.
      */
-    uint8_t getRawPackages(uint8_t** data) override {
-        throw std::bad_function_call();
-    };
+    uint8_t getRawPackages(uint8_t** data) override;
 
     /**
      * @return Type of this message.

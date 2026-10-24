@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <csignal>
+#include <iostream>
+#include <ostream>
 
 #include "Messages/messageObjects.h"
 
@@ -39,15 +41,16 @@ bool NetworkDevice::_routeAndSend(Message *message, uint8_t sender) {
 }
 
 bool NetworkDevice::_sendInternal(Message *message, uint8_t nextHop, bool broadcast) {
-    uint8_t* packages[1];
-    message->getRawPackages(packages);
-    for (auto package : packages) {
+    uint8_t *dataAddress[1];
+    uint8_t number_packages = message->getRawPackages(dataAddress);
+    uint8_t *packages = *dataAddress;
+    for (int i = 0; i < number_packages; i++) {
         if (broadcast) {
-            if (!this->_broadcastToNeighbours(package, nextHop)) {
+            if (!this->_broadcastToNeighbours(packages + i * 32, nextHop)) {
                 return false;
             }
         } else {
-            if (!this->_write(package, nextHop)) {
+            if (!this->_write(packages + i * 32, nextHop)) {
                 return false;
             }
         }
@@ -244,9 +247,13 @@ void NetworkDevice::_hubNewDevice(RegistrationMessage *registrationMsg, uint8_t 
             if (i == 255) break;
         }
         this->_routeAndSend(&answerMsg);
+        this->routingTable[registrationMsg->newDeviceID] = sender;
+        this->tempRoutingTable.erase(registrationMsg->tempID);
     } else if (this->routingTable.count(registrationMsg->newDeviceID) == 0) {
         RegistrationMessage answerMsg = RegistrationMessage(0, registrationMsg->newDeviceID, registrationMsg->tempID, 3, true);
         this->_routeAndSend(&answerMsg);
+        this->routingTable[registrationMsg->newDeviceID] = sender;
+        this->tempRoutingTable.erase(registrationMsg->tempID);
     } else {
 
         // if the device ID is set and there is a device with the ID already in the routing table,
