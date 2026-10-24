@@ -2,14 +2,22 @@
 #define BOOST_TEST_MODULE RawPackageTest
 
 
+#include <thread>
 #include <boost/test/unit_test.hpp>
 
 #include "testNetworkDevice.h"
 
+bool msgsInTransit(std::map<std::pair<uint8_t, uint8_t>, std::vector<uint8_t*>> pipes) {
+    for (auto & pipe : pipes) {
+        if (!pipe.second.empty()) return true;
+    }
+    return false;
+}
+
 
 BOOST_AUTO_TEST_SUITE(NetworkTest)
 
-BOOST_AUTO_TEST_CASE(NetworkTest) {
+BOOST_AUTO_TEST_CASE(RegistrationTest) {
 
     /*
      * Test network
@@ -49,8 +57,6 @@ BOOST_AUTO_TEST_CASE(NetworkTest) {
         outs[pipe.first.first][pipe.first.second] = &(pipe.second);
     }
 
-    //TODO not sending messages
-
     // auto a = new TestNetworkDevice(0, 0, 1000, &ins[0], &outs[0]);
     devices.emplace_back(0, 0, 1000, &ins[0], &outs[0]);
     devices.emplace_back(1, 0, 1000, &ins[1], &outs[1]);
@@ -71,7 +77,8 @@ BOOST_AUTO_TEST_CASE(NetworkTest) {
     BOOST_CHECK(devices[1].isRegistered());
     BOOST_CHECK(!devices[3].isRegistered());
 
-    sleep(1);
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(10));
     devices[3].registerDevice();
 
     for (int j = 0; j < 3; j++) {
@@ -82,11 +89,14 @@ BOOST_AUTO_TEST_CASE(NetworkTest) {
     BOOST_CHECK(devices[1].isRegistered());
     BOOST_CHECK(devices[3].isRegistered());
 
-    sleep(1);
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(10));
     devices[2].registerDevice();
-    sleep(1);
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(10));
     devices[4].registerDevice();
-    sleep(1);
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(10));
     devices[5].registerDevice();
 
 
@@ -164,96 +174,128 @@ BOOST_AUTO_TEST_CASE(NetworkTest) {
     for (int j = 0; j < 7; j++) {
         BOOST_CHECK(devices[j].isRegistered());
     }
-
-
-    //
-    // uint8_t contentSizes[] = {
-    //     FIRST_DATA_PACKAGE_SLOTS,
-    //     FIRST_DATA_PACKAGE_SLOTS + 1,
-    //     FIRST_DATA_PACKAGE_SLOTS + DATA_SLOTS,
-    //     FIRST_DATA_PACKAGE_SLOTS + DATA_SLOTS + 1,
-    //     FIRST_DATA_PACKAGE_SLOTS + 2 * DATA_SLOTS,
-    //     FIRST_DATA_PACKAGE_SLOTS + 2 * DATA_SLOTS + 1};
-    // uint8_t numberPackages[] = {1, 2, 2, 3, 3, 4};
-    //
-    // for (int i = 0; i < 6; i++) {
-    //
-    //     uint8_t id = std::rand() % 256;
-    //     uint8_t origin = std::rand() % 256;
-    //     uint16_t messageId = std::rand() % 65536;
-    //
-    //     uint8_t *content = new uint8_t[contentSizes[i]];
-    //
-    //     for (int j = 0; j < contentSizes[i]; j++) {
-    //         content[i] = std::rand() % 256;
-    //     }
-    //
-    //     DataMessage msg = DataMessage(id, false, messageId, origin, content, contentSizes[i]);
-    //
-    //     uint8_t *dataAddress[1];
-    //     uint8_t gotNumberPackages = msg.getRawPackages(dataAddress);
-    //     uint8_t *rawPackages = *dataAddress;
-    //
-    //     BOOST_CHECK_EQUAL(gotNumberPackages, numberPackages[i]);
-    //
-    //     MessageBuilder builder;
-    //
-    //
-    //     for (int j1 = 0; j1 < numberPackages[i]; j1++) {
-    //         int j = numberPackages[i] > 1 && j1 < 2 ? 1 - j1 : j1;
-    //
-    //         uint8_t *package = rawPackages + j * 32;
-    //
-    //         BOOST_CHECK_EQUAL(package[0], NETWORKPROTOCOL_VERSION);
-    //         BOOST_CHECK_EQUAL(package[1], id);
-    //         BOOST_CHECK_EQUAL(package[2] / 4, 0);
-    //         BOOST_CHECK_EQUAL(package[3], j);
-    //         BOOST_CHECK_EQUAL(package[4], origin);
-    //
-    //         uint16_t createdMessageId = 0;
-    //         memcpy(&createdMessageId, package + 5, sizeof(uint16_t));
-    //
-    //         BOOST_CHECK_EQUAL(createdMessageId, messageId);
-    //
-    //         auto* createdMsg = dynamic_cast<PartialDataMessage *>(Message::fromRawBytes(rawPackages + j * 32));
-    //
-    //         BOOST_CHECK_EQUAL(createdMsg->version, NETWORKPROTOCOL_VERSION);
-    //         BOOST_CHECK_EQUAL(createdMsg->receiver, id);
-    //         BOOST_CHECK_EQUAL(createdMsg->origin, origin);
-    //         BOOST_CHECK_EQUAL(createdMsg->messageID, messageId);
-    //         BOOST_CHECK_EQUAL(createdMsg->getType(), 0);
-    //         BOOST_CHECK_EQUAL(createdMsg->packageNumber, j);
-    //
-    //         if (j == 0) {
-    //             BOOST_CHECK_EQUAL(createdMsg->content[0], numberPackages[i]);
-    //             for (int k = 0; k < FIRST_DATA_PACKAGE_SLOTS; k++) {
-    //                 BOOST_CHECK_EQUAL(createdMsg->content[FIRST_METADATA_SLOTS + k], content[k]);
-    //             }
-    //         } else {
-    //             int numberSlots = j == numberPackages[i] - 1 ? (contentSizes[i] - FIRST_DATA_PACKAGE_SLOTS) % DATA_SLOTS : DATA_SLOTS;
-    //             for (int k = 0; k < numberSlots; k++) {
-    //                 BOOST_CHECK_EQUAL(createdMsg->content[k], content[SLOT_COUNT(j) + k]);
-    //             }
-    //         }
-    //
-    //
-    //         auto createdDataMessage = DataMessage();
-    //         bool messageBuilt = builder.newDataMessage(createdMsg, &createdDataMessage);
-    //
-    //
-    //         if (j1 == numberPackages[i] - 1) {
-    //             BOOST_CHECK(messageBuilt);
-    //             BOOST_CHECK_EQUAL(createdDataMessage.contentSize, SLOT_COUNT(numberPackages[i]));
-    //             for (int k = 0; k < contentSizes[i]; k++) {
-    //                 BOOST_CHECK_EQUAL(createdDataMessage.content[k], content[k]);
-    //             }
-    //         } else {
-    //             BOOST_CHECK(!messageBuilt);
-    //         }
-    //     }
-    //
-    //     Message::cleanUp(rawPackages);
-    // }
 }
 
+
+
+BOOST_AUTO_TEST_CASE(DataTest) {
+
+    /*
+     * Test network
+     *
+     *          0
+     *         / \
+     *        1   3
+     *       /|\
+     *      2 4 5
+     *     /
+     *    6
+     */
+
+    std::map<std::pair<uint8_t, uint8_t>, std::vector<uint8_t*>> pipes = {};
+
+    pipes[std::pair<uint8_t, uint8_t>(0, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(0, 3)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 2)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 4)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 5)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(2, 6)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 0)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(3, 0)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(2, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(4, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(5, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(6, 2)] = std::vector<uint8_t*>();
+
+    std::vector<TestNetworkDevice> devices = {};
+
+    std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t*>*>> ins = {};
+    std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t*>*>> outs = {};
+
+    for (auto & pipe : pipes) {
+        auto a = ins[pipe.first.first][pipe.first.second];
+        ins[pipe.first.second][pipe.first.first] = &(pipe.second);
+        outs[pipe.first.first][pipe.first.second] = &(pipe.second);
+    }
+
+    //TODO not sending messages
+
+    // auto a = new TestNetworkDevice(0, 0, 1000, &ins[0], &outs[0]);
+    devices.emplace_back(0, 0, 1000, &ins[0], &outs[0]);
+    devices.emplace_back(1, 0, 1000, &ins[1], &outs[1]);
+    devices.emplace_back(2, 1, 1000, &ins[2], &outs[2]);
+    devices.emplace_back(3, 0, 1000, &ins[3], &outs[3]);
+    devices.emplace_back(4, 1, 1000, &ins[4], &outs[4]);
+    devices.emplace_back(5, 1, 1000, &ins[5], &outs[5]);
+    devices.emplace_back(6, 2, 1000, &ins[6], &outs[6]);
+
+    for (int i = 1; i < 7; i++) {
+        devices[i].registerDevice();
+        while (msgsInTransit(pipes)) {
+            for (int j = 0; j < 7; j++) {
+                devices[j].update();
+            }
+        }
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(10));
+    }
+
+    for (int j = 0; j < 7; j++) {
+        BOOST_CHECK(devices[j].isRegistered());
+    }
+
+    uint8_t data_sizes[] = {20, 54, 128};
+    uint8_t number_packages[] = {1, 3, 6};
+
+    for (int i = 0; i < 3; i++) {
+        auto data_size = data_sizes[i];
+
+        auto content = new uint8_t[data_size];
+
+        for (int j = 0; j < data_size; j++) {
+            content[j] = j;
+        }
+
+        devices[2].send(6, content, data_size);
+
+        bool delivered = false;
+        while (msgsInTransit(pipes)) {
+            for (int j = 0; j < 7; j++) {
+                if (devices[j].update()) {
+                    BOOST_CHECK(j == 6);
+                    uint8_t* received[1];
+                    u_int16_t size = devices[j].receive(received);
+                    auto receivedData = *received;
+                    BOOST_CHECK_EQUAL(size, SLOT_COUNT(number_packages[i]));
+                    for (int k = 0; k < data_size; k++) {
+                        BOOST_CHECK_EQUAL(content[k], receivedData[k]);
+                    }
+                    delivered = true;
+                }
+            }
+        }
+        BOOST_CHECK(delivered);
+
+
+        devices[3].send(6, content, data_size);
+
+        delivered = false;
+        while (msgsInTransit(pipes)) {
+            for (int j = 0; j < 7; j++) {
+                if (devices[j].update()) {
+                    BOOST_CHECK(j == 6);
+                    uint8_t* received[1];
+                    u_int16_t size = devices[j].receive(received);
+                    auto receivedData = *received;
+                    BOOST_CHECK_EQUAL(size, SLOT_COUNT(number_packages[i]));
+                    for (int k = 0; k < data_size; k++) {
+                        BOOST_CHECK_EQUAL(content[k], receivedData[k]);
+                    }
+                    delivered = true;
+                }
+            }
+        }
+        BOOST_CHECK(delivered);
+    }
+}
 BOOST_AUTO_TEST_SUITE_END()
