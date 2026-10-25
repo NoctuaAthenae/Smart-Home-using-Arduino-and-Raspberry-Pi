@@ -50,6 +50,9 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
     pipes[std::pair<uint8_t, uint8_t>(3, 6)] = std::vector<uint8_t*>();
     pipes[std::pair<uint8_t, uint8_t>(6, 3)] = std::vector<uint8_t*>();
 
+    pipes[std::pair<uint8_t, uint8_t>(3, 8)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(8, 3)] = std::vector<uint8_t*>();
+
     std::vector<TestNetworkDevice> devices = {};
 
     std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t*>*>> ins = {};
@@ -73,6 +76,7 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
     devices.emplace_back(5, 1, 1000, &ins[5], &outs[5]);
     devices.emplace_back(6, 2, 1000, &ins[6], &outs[6]);
     devices.emplace_back(6, 3, 1000, &ins[7], &outs[7]);
+    devices.emplace_back(0, 3, 1000, &ins[8], &outs[8]);
 
     devices[1].registerDevice();
 
@@ -188,7 +192,7 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
 
 
     while (msgsInTransit(pipes)) {
-        for (int j = 0; j < 8; j++) {
+        for (int j = 0; j < 9; j++) {
             devices[j].update();
         }
     }
@@ -198,10 +202,10 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
 
     devices[7].registerDevice();
 
-    for (int j = 0; j < 8; j++) {
+    for (int j = 0; j < 9; j++) {
         devices[j].update();
     }
-    for (int j = 0; j < 8; j++) {
+    for (int j = 0; j < 9; j++) {
         devices[j].update();
     }
 
@@ -209,13 +213,24 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
         std::chrono::milliseconds(2000));
 
     while (msgsInTransit(pipes)) {
-        for (int j = 0; j < 8; j++) {
+        for (int j = 0; j < 9; j++) {
             devices[j].update();
         }
     }
 
-
     BOOST_CHECK(devices[7].isRegistered());
+
+
+
+    devices[8].registerDevice();
+
+    while (msgsInTransit(pipes)) {
+        for (int j = 0; j < 9; j++) {
+            devices[j].update();
+        }
+    }
+
+    BOOST_CHECK(devices[8].isRegistered());
 }
 
 
