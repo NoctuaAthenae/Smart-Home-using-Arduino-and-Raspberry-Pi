@@ -181,26 +181,41 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
     for (int j = 0; j < 7; j++) {
         BOOST_CHECK(devices[j].isRegistered());
     }
-    //
-    // std::this_thread::sleep_for(
-    //     std::chrono::milliseconds(10));
-    // devices[7].registerDevice();
-    //
-    //
-    // while (msgsInTransit(pipes)) {
-    //     for (int j = 0; j < 8; j++) {
-    //         devices[j].update();
-    //     }
-    // }
-    // std::this_thread::sleep_for(
-    // std::chrono::milliseconds(2000));
-    // while (msgsInTransit(pipes)) {
-    //     for (int j = 0; j < 8; j++) {
-    //         devices[j].update();
-    //     }
-    // }
-    //
-    // BOOST_CHECK(!devices[7].isRegistered());
+
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(10));
+    devices[7].registerDevice();
+
+
+    while (msgsInTransit(pipes)) {
+        for (int j = 0; j < 8; j++) {
+            devices[j].update();
+        }
+    }
+
+    BOOST_CHECK(!devices[7].isRegistered());
+
+
+    devices[7].registerDevice();
+
+    for (int j = 0; j < 8; j++) {
+        devices[j].update();
+    }
+    for (int j = 0; j < 8; j++) {
+        devices[j].update();
+    }
+
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(2000));
+
+    while (msgsInTransit(pipes)) {
+        for (int j = 0; j < 8; j++) {
+            devices[j].update();
+        }
+    }
+
+
+    BOOST_CHECK(devices[7].isRegistered());
 }
 
 
