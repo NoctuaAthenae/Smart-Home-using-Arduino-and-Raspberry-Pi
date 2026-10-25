@@ -39,6 +39,7 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
     pipes[std::pair<uint8_t, uint8_t>(1, 4)] = std::vector<uint8_t*>();
     pipes[std::pair<uint8_t, uint8_t>(1, 5)] = std::vector<uint8_t*>();
     pipes[std::pair<uint8_t, uint8_t>(2, 6)] = std::vector<uint8_t*>();
+
     pipes[std::pair<uint8_t, uint8_t>(1, 0)] = std::vector<uint8_t*>();
     pipes[std::pair<uint8_t, uint8_t>(3, 0)] = std::vector<uint8_t*>();
     pipes[std::pair<uint8_t, uint8_t>(2, 1)] = std::vector<uint8_t*>();
@@ -46,15 +47,21 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
     pipes[std::pair<uint8_t, uint8_t>(5, 1)] = std::vector<uint8_t*>();
     pipes[std::pair<uint8_t, uint8_t>(6, 2)] = std::vector<uint8_t*>();
 
+    pipes[std::pair<uint8_t, uint8_t>(3, 6)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(6, 3)] = std::vector<uint8_t*>();
+
     std::vector<TestNetworkDevice> devices = {};
 
     std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t*>*>> ins = {};
     std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t*>*>> outs = {};
 
     for (auto & pipe : pipes) {
-        auto a = ins[pipe.first.first][pipe.first.second];
-        ins[pipe.first.second][pipe.first.first] = &(pipe.second);
-        outs[pipe.first.first][pipe.first.second] = &(pipe.second);
+        auto first = pipe.first.first;
+        auto second = pipe.first.second;
+        if (second == 6 && first == 3) second = 7;
+        ins[second][pipe.first.first] = &(pipe.second);
+        if (first == 6 && second == 3) first = 7;
+        outs[first][pipe.first.second] = &(pipe.second);
     }
 
     // auto a = new TestNetworkDevice(0, 0, 1000, &ins[0], &outs[0]);
@@ -65,6 +72,7 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
     devices.emplace_back(4, 1, 1000, &ins[4], &outs[4]);
     devices.emplace_back(5, 1, 1000, &ins[5], &outs[5]);
     devices.emplace_back(6, 2, 1000, &ins[6], &outs[6]);
+    devices.emplace_back(6, 3, 1000, &ins[7], &outs[7]);
 
     devices[1].registerDevice();
 
@@ -118,7 +126,8 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
     BOOST_CHECK(!devices[4].isRegistered());
     BOOST_CHECK(!devices[5].isRegistered());
 
-    sleep(1);
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(10));
     devices[6].registerDevice();
 
     // 1 sends 4 to 0
@@ -169,11 +178,29 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
         devices[i].update();
     }
 
-
-
     for (int j = 0; j < 7; j++) {
         BOOST_CHECK(devices[j].isRegistered());
     }
+    //
+    // std::this_thread::sleep_for(
+    //     std::chrono::milliseconds(10));
+    // devices[7].registerDevice();
+    //
+    //
+    // while (msgsInTransit(pipes)) {
+    //     for (int j = 0; j < 8; j++) {
+    //         devices[j].update();
+    //     }
+    // }
+    // std::this_thread::sleep_for(
+    // std::chrono::milliseconds(2000));
+    // while (msgsInTransit(pipes)) {
+    //     for (int j = 0; j < 8; j++) {
+    //         devices[j].update();
+    //     }
+    // }
+    //
+    // BOOST_CHECK(!devices[7].isRegistered());
 }
 
 
@@ -217,8 +244,6 @@ BOOST_AUTO_TEST_CASE(DataTest) {
         ins[pipe.first.second][pipe.first.first] = &(pipe.second);
         outs[pipe.first.first][pipe.first.second] = &(pipe.second);
     }
-
-    //TODO not sending messages
 
     // auto a = new TestNetworkDevice(0, 0, 1000, &ins[0], &outs[0]);
     devices.emplace_back(0, 0, 1000, &ins[0], &outs[0]);
