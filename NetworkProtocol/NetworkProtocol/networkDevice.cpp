@@ -268,7 +268,7 @@ void NetworkDevice::_hubNewDevice(RegistrationMessage *registrationMsg, uint8_t 
             if (i == 255) break;
         }
         this->_routeAndSend(&answerMsg);
-        this->routingTable[registrationMsg->newDeviceID] = sender;
+        this->routingTable[answerMsg.newDeviceID] = sender;
         this->tempRoutingTable.erase(registrationMsg->tempID);
     } else if (this->routingTable.count(registrationMsg->newDeviceID) == 0) {
         RegistrationMessage answerMsg = RegistrationMessage(0, registrationMsg->newDeviceID, registrationMsg->tempID, 3, true);
