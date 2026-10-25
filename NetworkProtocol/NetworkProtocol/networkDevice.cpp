@@ -151,7 +151,10 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
         }
         case 2: {   // ping message
             if (!this->isRegistered()) return false;
-            if (message->receiver != this->id) return false;
+            if (message->receiver != this->id) {
+                this->_routeAndSend(message);
+                return false;
+            }
             auto *pingMsg = dynamic_cast<PingMessage *>(message);
             if (!pingMsg->isResponse) {
                 pingMsg->isResponse = true;
