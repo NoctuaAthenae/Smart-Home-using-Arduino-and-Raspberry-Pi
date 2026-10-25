@@ -323,4 +323,91 @@ BOOST_AUTO_TEST_CASE(DataTest) {
         BOOST_CHECK(delivered);
     }
 }
+
+BOOST_AUTO_TEST_CASE(PingTest) {
+
+    /*
+     * Test network
+     *
+     *          0
+     *         / \
+     *        1   3
+     *       /|\
+     *      2 4 5
+     *     /
+     *    6
+     */
+
+    std::map<std::pair<uint8_t, uint8_t>, std::vector<uint8_t*>> pipes = {};
+
+    pipes[std::pair<uint8_t, uint8_t>(0, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(0, 3)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 2)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 4)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 5)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(2, 6)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 0)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(3, 0)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(2, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(4, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(5, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(6, 2)] = std::vector<uint8_t*>();
+
+    std::vector<TestNetworkDevice> devices = {};
+
+    std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t*>*>> ins = {};
+    std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t*>*>> outs = {};
+
+    for (auto & pipe : pipes) {
+        auto a = ins[pipe.first.first][pipe.first.second];
+        ins[pipe.first.second][pipe.first.first] = &(pipe.second);
+        outs[pipe.first.first][pipe.first.second] = &(pipe.second);
+    }
+
+    // auto a = new TestNetworkDevice(0, 0, 1000, &ins[0], &outs[0]);
+    devices.emplace_back(0, 0, 1000, &ins[0], &outs[0]);
+    devices.emplace_back(1, 0, 1000, &ins[1], &outs[1]);
+    devices.emplace_back(2, 1, 1000, &ins[2], &outs[2]);
+    devices.emplace_back(3, 0, 1000, &ins[3], &outs[3]);
+    devices.emplace_back(4, 1, 1000, &ins[4], &outs[4]);
+    devices.emplace_back(5, 1, 1000, &ins[5], &outs[5]);
+    devices.emplace_back(6, 2, 1000, &ins[6], &outs[6]);
+
+    for (int i = 1; i < 7; i++) {
+        devices[i].registerDevice();
+        while (msgsInTransit(pipes)) {
+            for (int j = 0; j < 7; j++) {
+                devices[j].update();
+            }
+        }
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(10));
+    }
+
+    for (int j = 0; j < 7; j++) {
+        BOOST_CHECK(devices[j].isRegistered());
+    }
+
+
+
+    for (int i = 0; i < 7; i++) {
+        for (int k = 0; k < 7; k++) {
+            if (i == k) continue;
+            uint8_t pingId = devices[i].ping(k);
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(2));
+            bool delivered = false;
+            while (msgsInTransit(pipes)) {
+                for (int j = 0; j < 7; j++) {
+                    devices[j].update();
+                    if (devices[j].checkPing(pingId) > 0) {
+                        BOOST_CHECK(j == i);
+                        delivered = true;
+                    }
+                }
+            }
+            BOOST_CHECK(delivered);
+        }
+    }
+}
 BOOST_AUTO_TEST_SUITE_END()
