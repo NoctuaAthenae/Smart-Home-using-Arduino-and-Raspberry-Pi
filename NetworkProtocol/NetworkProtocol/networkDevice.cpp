@@ -164,6 +164,21 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                 return false;
             }
 
+            if (this->id == 0) {
+
+                for (auto ping: this->registrationPings) {
+                    if (ping.newDeviceID == pingMsg->senderId) {
+
+                        RegistrationMessage answerMsg = RegistrationMessage(0, ping.newDeviceID, ping.tempID, 3, false);
+                        this->_routeAndSend(&answerMsg);
+
+                        this->tempRoutingTable.erase(ping.tempID);
+
+                        this->registrationPings.erase(find(this->registrationPings.begin(), this->registrationPings.end(), ping));
+                        return false;
+                    }
+                }
+            }
             this->pings[pingMsg->pingId].responseTime = Timer::elapsed(pingMsg->timestamp, this->_getTime());
 
 
@@ -204,8 +219,8 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
             }
 
             if (connectionMsg->isDisconnect) {
-                this->routingTable.erase(connectionMsg->receiver);
                 this->_routeAndSend(connectionMsg);
+                this->routingTable.erase(connectionMsg->receiver);
                 return false;
             }
 
@@ -263,7 +278,7 @@ void NetworkDevice::_hubNewDevice(RegistrationMessage *registrationMsg, uint8_t 
         // the hub has to ping id and wait for timeout, then accept
         uint32_t time = this->_getTime();
         this->registrationPings.push_back({registrationMsg->newDeviceID, Timer(this->timeout).start(time), registrationMsg->tempID});
-        PingMessage pingMsg = PingMessage(registrationMsg->newDeviceID, time % 256, this->id, false, time);
+        PingMessage pingMsg = PingMessage(registrationMsg->newDeviceID, this->_getMessageID(), this->id, false, time);
         this->_routeAndSend(&pingMsg);
     }
 }
@@ -292,8 +307,6 @@ bool NetworkDevice::update() {
         auto ping = this->registrationPings[i];
         if (!ping.timer.expired(time)) continue;
 
-        this->registrationPings.erase(find(this->registrationPings.begin(), this->registrationPings.end(), ping));
-
         // The ping for an ID a device is trying to register with has timed out, so send a disconnect message on the old path
         ReDisconnectMessage msg = ReDisconnectMessage(ping.newDeviceID, true);
         this->_routeAndSend(&msg);
@@ -303,6 +316,8 @@ bool NetworkDevice::update() {
         // and accept the registration request
         RegistrationMessage answerMsg = RegistrationMessage(ping.newDeviceID, ping.newDeviceID, ping.tempID, 3, true);
         this->_routeAndSend(&answerMsg);
+
+        this->registrationPings.erase(find(this->registrationPings.begin(), this->registrationPings.end(), ping));
 
         // index is changed after erase, so decrement i
         --i;
