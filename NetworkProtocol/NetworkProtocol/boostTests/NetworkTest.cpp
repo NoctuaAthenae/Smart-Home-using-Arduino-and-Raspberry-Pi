@@ -264,6 +264,34 @@ BOOST_AUTO_TEST_CASE(RegistrationTest) {
     }
 
     BOOST_CHECK(devices[8].isRegistered());
+
+    // assumed lost ping is returned and still not received
+    BOOST_CHECK(devices[0].checkPing(8) > 0);
+
+
+    for (int i = 0; i < 9; i++) {
+        for (int k = 0; k < 9; k++) {
+            if (i == k or i == 6 or k == 6) continue;
+            uint8_t sender = i;
+            uint8_t receiver = k;
+            if (sender == 8) sender = 6;
+            if (receiver == 8) receiver = 6;
+            uint8_t pingId = devices[sender].ping(receiver);
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(2));
+            bool delivered = false;
+            while (msgsInTransit(pipes)) {
+                for (int j = 0; j < 9; j++) {
+                    devices[j].update();
+                    if (devices[j].checkPing(pingId) > 0) {
+                        BOOST_CHECK(j == i);
+                        delivered = true;
+                    }
+                }
+            }
+            BOOST_CHECK(delivered);
+        }
+    }
 }
 
 

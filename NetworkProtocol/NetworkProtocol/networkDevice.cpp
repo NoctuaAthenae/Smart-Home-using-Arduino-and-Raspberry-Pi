@@ -32,6 +32,10 @@ bool NetworkDevice::_routeAndSend(Message *message, uint8_t sender) {
                     return this->_sendInternal(message, nextHop);
                 }
             }
+            if (this->registered && this->id == 0) {
+                this->_printError(0, (uint8_t *) "Device not found");
+                return false;
+            }
             nextHop = this->parent;
         }
         return this->_sendInternal(message, nextHop);
@@ -59,8 +63,6 @@ bool NetworkDevice::_sendInternal(Message *message, uint8_t nextHop, bool broadc
 }
 
 bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
-    // TODO commands must set members got by receive method
-
     switch (message->getType()) {
         case 0: {   // data message
             if (!this->isRegistered()) return false;
@@ -121,28 +123,16 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
                     if (this->tempRoutingTable.find(registrationMsg->tempID) == this->tempRoutingTable.end())
                         return false;
 
-                    // TODO is temporally updating the routing table necessary?
-                    // temporarily update the routing table to the new path
-                    uint8_t originalNextHop = 0;
-                    bool routeExists = this->routingTable.find(registrationMsg->newDeviceID) != this->routingTable.end();
-                    if (routeExists) originalNextHop = this->routingTable[registrationMsg->newDeviceID];
-
                     this->_routeAndSend(registrationMsg, sender);
 
-                    if (this->tempRoutingTable[registrationMsg->tempID] == 0) {
-                        this->routingTable[registrationMsg->newDeviceID] = registrationMsg->newDeviceID;
-                    } else {
-                        this->routingTable[registrationMsg->newDeviceID] = this->tempRoutingTable[registrationMsg->tempID];
-                    }
-                    this->tempRoutingTable.erase(registrationMsg->tempID);
-
-                    // if the device was rejected, restore the old path
-                    if (!registrationMsg->extraField) {
-                        if (routeExists) {
-                            this->routingTable[registrationMsg->newDeviceID] = originalNextHop;
+                    // update routing table to new path
+                    if (registrationMsg->extraField) {
+                        if (this->tempRoutingTable[registrationMsg->tempID] == 0) {
+                            this->routingTable[registrationMsg->newDeviceID] = registrationMsg->newDeviceID;
                         } else {
-                            this->routingTable.erase(registrationMsg->newDeviceID);
+                            this->routingTable[registrationMsg->newDeviceID] = this->tempRoutingTable[registrationMsg->tempID];
                         }
+                        this->tempRoutingTable.erase(registrationMsg->tempID);
                     }
                     break;
                 }
@@ -288,6 +278,7 @@ void NetworkDevice::_hubNewDevice(RegistrationMessage *registrationMsg, uint8_t 
 
 void NetworkDevice::registerDevice() {
     this->tempID = this->_getTime();
+    this->registered = false;
 
     auto msg = new RegistrationMessage(this->parent, this->id, this->tempID, 1);
     this->_routeAndSend(msg);
@@ -411,6 +402,7 @@ uint8_t NetworkDevice::ping(uint8_t targetID) {
 }
 
 uint32_t NetworkDevice::checkPing(uint8_t pingID)  {
+    if (this->pings.find(pingID) == this->pings.end()) return 0;
     uint32_t responseTime = this->pings[pingID].responseTime;
     if (responseTime > 0) {
         this->pings.erase(pingID);
