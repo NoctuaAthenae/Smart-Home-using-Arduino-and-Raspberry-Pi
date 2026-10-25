@@ -255,7 +255,7 @@ void NetworkDevice::_hubNewDevice(RegistrationMessage *registrationMsg, uint8_t 
     if (registrationMsg->newDeviceID == 0) {
         // if the device id is not set, assign first free ID
         RegistrationMessage answerMsg = RegistrationMessage(0, 0, registrationMsg->tempID, 3, true);
-        for (uint8_t i = 0; true; ++i) {
+        for (uint8_t i = 1; true; ++i) {
             if (this->routingTable.count(i) < 1) {
                 answerMsg.receiver = i;
                 answerMsg.newDeviceID = i;
@@ -284,8 +284,6 @@ void NetworkDevice::_hubNewDevice(RegistrationMessage *registrationMsg, uint8_t 
 }
 
 void NetworkDevice::registerDevice() {
-    if (this->id == 0)
-        throw std::bad_function_call();
     this->tempID = this->_getTime();
 
     auto msg = new RegistrationMessage(this->parent, this->id, this->tempID, 1);
