@@ -440,4 +440,198 @@ BOOST_AUTO_TEST_CASE(PingTest) {
         }
     }
 }
+
+BOOST_AUTO_TEST_CASE(GroupTest) {
+
+    /*
+     * Test network
+     *
+     *          0
+     *         / \
+     *        1   3
+     *       /|\
+     *      2 4 5
+     *     /
+     *    6
+     */
+
+    std::map<std::pair<uint8_t, uint8_t>, std::vector<uint8_t*>> pipes = {};
+
+    pipes[std::pair<uint8_t, uint8_t>(0, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(0, 3)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 2)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 4)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 5)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(2, 6)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(1, 0)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(3, 0)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(2, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(4, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(5, 1)] = std::vector<uint8_t*>();
+    pipes[std::pair<uint8_t, uint8_t>(6, 2)] = std::vector<uint8_t*>();
+
+    std::vector<TestNetworkDevice> devices = {};
+
+    std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t*>*>> ins = {};
+    std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t*>*>> outs = {};
+
+    for (auto & pipe : pipes) {
+        auto a = ins[pipe.first.first][pipe.first.second];
+        ins[pipe.first.second][pipe.first.first] = &(pipe.second);
+        outs[pipe.first.first][pipe.first.second] = &(pipe.second);
+    }
+
+    // auto a = new TestNetworkDevice(0, 0, 1000, &ins[0], &outs[0]);
+    devices.emplace_back(0, 0, 1000, &ins[0], &outs[0]);
+    devices.emplace_back(1, 0, 1000, &ins[1], &outs[1]);
+    devices.emplace_back(2, 1, 1000, &ins[2], &outs[2]);
+    devices.emplace_back(3, 0, 1000, &ins[3], &outs[3]);
+    devices.emplace_back(4, 1, 1000, &ins[4], &outs[4]);
+    devices.emplace_back(5, 1, 1000, &ins[5], &outs[5]);
+    devices.emplace_back(6, 2, 1000, &ins[6], &outs[6]);
+
+    for (int i = 1; i < 7; i++) {
+        devices[i].registerDevice();
+        while (msgsInTransit(pipes)) {
+            for (int j = 0; j < 7; j++) {
+                devices[j].update();
+            }
+        }
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(10));
+    }
+
+    for (int j = 0; j < 7; j++) {
+        BOOST_CHECK(devices[j].isRegistered());
+    }
+
+
+
+
+    auto data_size = 20;
+
+    auto content = new uint8_t[data_size];
+
+    for (int j = 0; j < data_size; j++) {
+        content[j] = j;
+    }
+
+    // broadcast test
+    devices[1].sendToGroup(0, content, data_size);
+    // sender will not receive msg
+    bool delivered[] = {false, true, false, false, false, false};
+    while (msgsInTransit(pipes)) {
+        for (int j = 0; j < 7; j++) {
+            if (devices[j].update()) {
+                uint8_t* received[1];
+                u_int16_t size = devices[j].receive(received);
+                auto receivedData = *received;
+                BOOST_CHECK_EQUAL(size, 24);
+                for (int k = 0; k < data_size; k++) {
+                    BOOST_CHECK_EQUAL(content[k], receivedData[k]);
+                }
+                delivered[j] = !delivered[j];
+            }
+        }
+    }
+    for (auto a: delivered) BOOST_CHECK(a);
+
+
+
+    uint8_t group1[] = {0, 2, 3, 6};
+
+    for (auto device : group1) {
+        devices[device].addDeviceToGroup(1);
+        delivered[device] = false;
+    }
+
+    // send to group
+    devices[1].sendToGroup(1, content, data_size);
+    while (msgsInTransit(pipes)) {
+        for (int j = 0; j < 7; j++) {
+            if (devices[j].update()) {
+                uint8_t* received[1];
+                u_int16_t size = devices[j].receive(received);
+                auto receivedData = *received;
+                BOOST_CHECK_EQUAL(size, 24);
+                for (int k = 0; k < data_size; k++) {
+                    BOOST_CHECK_EQUAL(content[k], receivedData[k]);
+                }
+                delivered[j] = !delivered[j];
+            }
+        }
+    }
+    for (auto a: delivered) BOOST_CHECK(a);
+
+
+    // remove from group
+    for (auto device : group1) {
+        devices[device].removeDeviceFromGroup(1);
+    }
+
+    // no one should receive msg
+    devices[1].sendToGroup(1, content, data_size);
+    while (msgsInTransit(pipes)) {
+        for (int j = 0; j < 7; j++) {
+            if (devices[j].update()) {
+                BOOST_CHECK(false);
+            }
+        }
+    }
+
+    // add devices to group from root
+    for (auto device : group1) {
+        devices[0].addDeviceToGroup(1, device);
+        delivered[device] = false;
+    }
+
+    // wait for group add msg to arrive
+    while (msgsInTransit(pipes)) {
+        for (int j = 0; j < 7; j++) {
+            devices[j].update();
+        }
+    }
+
+
+    // send to group
+    devices[1].sendToGroup(1, content, data_size);
+    while (msgsInTransit(pipes)) {
+        for (int j = 0; j < 7; j++) {
+            if (devices[j].update()) {
+                uint8_t* received[1];
+                u_int16_t size = devices[j].receive(received);
+                auto receivedData = *received;
+                BOOST_CHECK_EQUAL(size, 24);
+                for (int k = 0; k < data_size; k++) {
+                    BOOST_CHECK_EQUAL(content[k], receivedData[k]);
+                }
+                delivered[j] = !delivered[j];
+            }
+        }
+    }
+    for (auto a: delivered) BOOST_CHECK(a);
+
+    // remove from group from root
+    for (auto device : group1) {
+        devices[0].removeDeviceFromGroup(1, device);
+        delivered[device] = false;
+    }
+
+    // wait for group add msg to arrive
+    while (msgsInTransit(pipes)) {
+        for (int j = 0; j < 7; j++) {
+            devices[j].update();
+        }
+    }
+
+    // no one should receive msg
+    devices[1].sendToGroup(1, content, data_size);
+    while (msgsInTransit(pipes)) {
+        for (int j = 0; j < 7; j++) {
+            if (devices[j].update()) {
+                BOOST_CHECK(false);
+            }
+        }
+    }
+}
 BOOST_AUTO_TEST_SUITE_END()
