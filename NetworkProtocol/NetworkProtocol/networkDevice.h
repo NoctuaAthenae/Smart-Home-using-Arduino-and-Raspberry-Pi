@@ -284,6 +284,34 @@ public:
      */
     bool isRegistered();
 
+    /**
+     * Only for the hub or own ID.
+     * Adds the device with the given ID to the given group.
+     * @param group The group the device is added to.
+     * @param deviceID The ID of the device that is added to the given group.
+     */
+    void addDeviceToGroup(uint8_t group, uint8_t deviceID);
+
+    /**
+     * Adds this device to the given group.
+     * @param group The group the device is added to.
+     */
+    void addDeviceToGroup(uint8_t group);
+
+    /**
+     * Only for the hub or own ID.
+     * Removes the device with the given ID from the given group.
+     * @param group The group the device is removed from.
+     * @param deviceID The ID of the device that is removed from the given group.
+     */
+    void removeDeviceFromGroup(uint8_t group, uint8_t deviceID);
+
+    /**
+     * Removes this device from the given group.
+     * @param group The group the device is removed from.
+     */
+    void removeDeviceFromGroup(uint8_t group);
+
 };
 
 

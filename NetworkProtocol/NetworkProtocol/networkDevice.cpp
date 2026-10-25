@@ -11,7 +11,7 @@ bool NetworkDevice::_assembleAndSend(uint8_t receiver, bool group, uint8_t *data
     auto message = DataMessage(receiver, group, this->_getMessageID(),
         this->id, data, dataSize);
 
-    return this->_routeAndSend(&message);
+    return this->_routeAndSend(&message, this->id);
 }
 
 bool NetworkDevice::_routeAndSend(Message *message, uint8_t sender) {
@@ -186,7 +186,10 @@ bool NetworkDevice::_processMessage(Message *message, uint8_t sender) {
         }
         case 3: {   // add/remove to group message
             if (!this->isRegistered()) return false;
-            if (message->receiver != this->id) return false;
+            if (message->receiver != this->id) {
+                this->_routeAndSend(message);
+                return false;
+            }
             auto *groupMsg = dynamic_cast<AddRemoveToGroupMessage *>(message);
             if (groupMsg->isAddToGroup) {
                 this->groups.push_back(groupMsg->groupId);
@@ -293,6 +296,41 @@ void NetworkDevice::registerDevice() {
 
 bool NetworkDevice::isRegistered() {
     return this->registered;
+}
+
+void NetworkDevice::addDeviceToGroup(uint8_t group, uint8_t deviceID) {
+    if (this->id == deviceID) {
+        this->groups.push_back(group);
+        return;
+    }
+
+    if (this->id == 0) {
+        auto msg = new AddRemoveToGroupMessage(deviceID, group, true);
+        this->_routeAndSend(msg);
+        delete msg;
+    }
+}
+
+void NetworkDevice::addDeviceToGroup(uint8_t group) {
+    this->addDeviceToGroup(group, this->id);
+}
+
+void NetworkDevice::removeDeviceFromGroup(uint8_t group, uint8_t deviceID) {
+    if (this->id == deviceID) {
+        this->groups.erase(std::remove(this->groups.begin(), this->groups.end(), group),
+            this->groups.end());
+        return;
+    }
+
+    if (this->id == 0) {
+        auto msg = new AddRemoveToGroupMessage(deviceID, group, false);
+        this->_routeAndSend(msg);
+        delete msg;
+    }
+}
+
+void NetworkDevice::removeDeviceFromGroup(uint8_t group) {
+    this->removeDeviceFromGroup(group, this->id);
 }
 
 bool NetworkDevice::update() {
